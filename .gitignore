@@ -46,15 +46,6 @@
 *.idb
 *.pdb
 
-# Kernel Module Compile Results
-*.mod*
-*.cmd
-.tmp_versions/
-modules.order
-Module.symvers
-Mkfile.old
-dkms.conf
-
 ### C++ ###
 # Prerequisites
 
@@ -472,8 +463,3 @@ FodyWeavers.xsd
 # Additional files built by Visual Studio
 
 # End of https://www.toptal.com/developers/gitignore/api/c,c++,visualstudio
-
-*.sln
-*.vcxproj
-*.vcxproj.filters
-*.png
