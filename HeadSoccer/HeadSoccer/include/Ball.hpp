@@ -25,5 +25,5 @@ public:
 private:
     Image* image;
 
-    void bounceOffPlayer( const Collider* body );
+    void bounceOffBox( const Collider* box, float minPushSpeed );
 };

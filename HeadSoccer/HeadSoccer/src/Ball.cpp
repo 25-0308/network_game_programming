@@ -65,26 +65,28 @@ void Ball::update() {
 }
 
 void Ball::onCollisionEntry( Object* other ) {
-    if ( dynamic_cast<Player*>( other ) ) {
-        bounceOffPlayer( other->getCollider( ) );
-    }
+    onCollision( other );
 }
 
 void Ball::onCollision( Object* other ) {
     if ( dynamic_cast<Player*>( other ) ) {
-        bounceOffPlayer( other->getCollider( ) );
+        // minimum push so a ball resting against a moving player still gets pushed
+        bounceOffBox( other->getCollider( ), 300.f );
+    }
+    else if ( other->getName( ).starts_with( "goalpost" ) ) {
+        // crossbar doesn't move, so the ball can rest or roll on it
+        bounceOffBox( other->getCollider( ), 0.f );
     }
 }
 
-// Treat the ball as a circle and the player as a box: push the ball out of the box
+// Treat the ball as a circle and the other collider as a box: push the ball out of the box
 // and reflect the velocity along the contact normal.
-void Ball::bounceOffPlayer( const Collider* body ) {
+void Ball::bounceOffBox( const Collider* box, float minPushSpeed ) {
     const float radius = getCollider( )->getScale( ).x / 2.f;
     const float restitution = 0.8f;
-    const float minPushSpeed = 300.f;  // so a ball resting on a moving player still gets pushed
 
-    auto boxPos = body->getFinalPos( );
-    auto half = body->getScale( ) / 2.f;
+    auto boxPos = box->getFinalPos( );
+    auto half = box->getScale( ) / 2.f;
     float left = boxPos.x - half.x;
     float right = boxPos.x + half.x;
     float top = boxPos.y - half.y;
