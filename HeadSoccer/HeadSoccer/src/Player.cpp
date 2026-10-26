@@ -4,6 +4,7 @@
 #include "../include/Camera.hpp"
 #include "../include/EventHandler.hpp"
 #include "../include/SceneHandler.hpp"
+#include "../include/Ball.hpp"
 
 void Player::update() {
     // Esc scene change is handled by player1 only, so the event is not queued twice
@@ -54,7 +55,7 @@ void Player::update() {
 
     if (pnum_==1) {
         if (InputHandler::getKeyState(Key::S) == KeyState::Tap) {
-                
+            kick();
         }
 
         if (jumped == false && InputHandler::getKeyState(Key::W) == KeyState::Tap) {
@@ -120,7 +121,7 @@ void Player::update() {
 
     if (pnum_ == 2) {
         if (InputHandler::getKeyState(Key::K) == KeyState::Tap) {
-
+            kick();
         }
 
         if (jumped == false && InputHandler::getKeyState(Key::I) == KeyState::Tap) {
@@ -188,6 +189,28 @@ void Player::update() {
     else if (pos_.x + scale_.x >= width) pos_.x = width - scale_.x;
 
     componentUpdate( );
+}
+
+void Player::kick( ) {
+    const float kickRange = 90.f;
+
+    // player1 stands on the left and kicks right, player2 the opposite
+    auto foot = pos_ + PointFloat( pnum_ == 1 ? 30.f : -30.f, 50.f );
+
+    for ( Object* obj : SceneHandler::getCurrScene( )->getGroup( ObjectType::Ball ) ) {
+        auto ball = static_cast<Ball*>( obj );
+        auto diff = ball->getPos( ) - foot;
+        if ( std::hypot( diff.x, diff.y ) > kickRange ) {
+            continue;
+        }
+
+        if ( pnum_ == 1 ) {
+            ball->kickright( );
+        }
+        else {
+            ball->kickleft( );
+        }
+    }
 }
 
 void Player::render( HDC hdc ) {

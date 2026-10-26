@@ -86,6 +86,8 @@ public:
 		if (speed > 0.1f) speed -= 0.1f;
 	}
 
+	void kick();
+
 private:
 	int speedstat;
 	int kickstat;
