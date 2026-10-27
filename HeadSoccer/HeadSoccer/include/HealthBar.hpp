@@ -5,7 +5,7 @@
 
 class Player;
 
-// HP bar in a top corner of the screen, plus a STUN label over the player while knocked out.
+// HP bar in a top corner of the screen, plus stars circling the player's head while knocked out.
 class HealthBar : public Object {
 public:
 	HealthBar( const Player* player, bool rightSide );
@@ -13,17 +13,22 @@ public:
 
 	HealthBar( const HealthBar& ) = delete;
 
+	void update( ) override;
 	void render( HDC hdc ) override;
 
 private:
+	void renderStunStars( HDC hdc );
+
 	const Player* player_;
 	bool rightSide_;
+	float starAngle_;
 
-	HFONT font_;
 	HBRUSH bgBrush_;
 	HBRUSH highBrush_;
 	HBRUSH midBrush_;
 	HBRUSH lowBrush_;
+	HBRUSH starBrush_;
+	HPEN starPen_;
 };
 
 #endif	// __health_bar_hpp

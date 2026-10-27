@@ -81,11 +81,11 @@ void InGameScene::entry( ) {
 
 	auto p1HealthBar = new HealthBar( p1, false );
 	p1HealthBar->setName( "player1_health_bar" );
-	addObject( ObjectType::InGameUI, p1HealthBar );
+	addObject( ObjectType::Overlay, p1HealthBar );
 
 	auto p2HealthBar = new HealthBar( p2, true );
 	p2HealthBar->setName( "player2_health_bar" );
-	addObject( ObjectType::InGameUI, p2HealthBar );
+	addObject( ObjectType::Overlay, p2HealthBar );
 
 	auto ball = new Ball("ball");
 	ball->setName("ball");
@@ -127,7 +127,7 @@ void InGameScene::entry( ) {
 
 	// draws both scores and the goal screen, so it goes in the last group to render on top
 	auto goalManager = new GoalManager( );
-	addObject( ObjectType::GoalUI, goalManager );
+	addObject( ObjectType::Overlay, goalManager );
 
 	//auto p1Power = new Background( "player1_power", "power_left.png", true );
 	//p1Power->setName( "player1_power" );

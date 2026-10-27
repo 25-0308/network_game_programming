@@ -1,7 +1,9 @@
 #include "../include/HealthBar.hpp"
 #include "../include/Player.hpp"
-#include "../include/TextLabel.hpp"
 #include "../include/Camera.hpp"
+#include "../include/Timer.hpp"
+
+#include <numbers>
 
 namespace {
 	constexpr int barWidth = 300;
@@ -9,25 +11,38 @@ namespace {
 	constexpr int barMargin = 40;
 	constexpr int barTop = 30;
 	constexpr int screenWidth = 1280;
+
+	constexpr int starCount = 3;
+	constexpr float starSpinSpeed = 4.f;	// radians per second
+	constexpr float orbitRadiusX = 32.f;
+	constexpr float orbitRadiusY = 8.f;
+	constexpr float orbitHeight = 58.f;		// above the player's center, just over the head
+	constexpr float starRadius = 9.f;
 }
 
 HealthBar::HealthBar( const Player* player, bool rightSide )
-	: player_{ player }, rightSide_{ rightSide } {
-	font_ = CreateFontW( 36, 0, 0, 0, FW_HEAVY, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
-		OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH, L"Arial Black" );
-
+	: player_{ player }, rightSide_{ rightSide }, starAngle_{ 0.f } {
 	bgBrush_ = CreateSolidBrush( RGB( 60, 60, 60 ) );
 	highBrush_ = CreateSolidBrush( RGB( 60, 200, 60 ) );
 	midBrush_ = CreateSolidBrush( RGB( 240, 200, 0 ) );
 	lowBrush_ = CreateSolidBrush( RGB( 220, 40, 40 ) );
+	starBrush_ = CreateSolidBrush( RGB( 255, 220, 0 ) );
+	starPen_ = CreatePen( PS_SOLID, 2, RGB( 90, 60, 0 ) );
 }
 
 HealthBar::~HealthBar( ) {
-	DeleteObject( font_ );
 	DeleteObject( bgBrush_ );
 	DeleteObject( highBrush_ );
 	DeleteObject( midBrush_ );
 	DeleteObject( lowBrush_ );
+	DeleteObject( starBrush_ );
+	DeleteObject( starPen_ );
+}
+
+void HealthBar::update( ) {
+	if ( player_->isStunned( ) ) {
+		starAngle_ = std::fmod( starAngle_ + starSpinSpeed * Timer::fdt( ), 2.f * std::numbers::pi_v<float> );
+	}
 }
 
 void HealthBar::render( HDC hdc ) {
@@ -50,19 +65,39 @@ void HealthBar::render( HDC hdc ) {
 	FillRect( hdc, &fill, fillBrush );
 	FrameRect( hdc, &bar, (HBRUSH)GetStockObject( BLACK_BRUSH ) );
 
-	if ( !player_->isStunned( ) ) {
-		return;
+	if ( player_->isStunned( ) ) {
+		renderStunStars( hdc );
+	}
+}
+
+void HealthBar::renderStunStars( HDC hdc ) {
+	constexpr auto pi = std::numbers::pi_v<float>;
+
+	auto oldBrush = (HBRUSH)SelectObject( hdc, starBrush_ );
+	auto oldPen = (HPEN)SelectObject( hdc, starPen_ );
+
+	auto center = player_->getPos( ) - Camera::getPos( ) - PointFloat( 0.f, orbitHeight );
+
+	for ( auto i = 0; i < starCount; ++i ) {
+		float angle = starAngle_ + 2.f * pi * i / starCount;
+		auto starPos = center + PointFloat( orbitRadiusX * std::cos( angle ), orbitRadiusY * std::sin( angle ) );
+
+		// stars on the far side of the orbit (sin < 0) are drawn smaller for a bit of depth
+		float radius = starRadius * ( 0.8f + 0.2f * std::sin( angle ) );
+
+		// 5-pointed star, each star also spins on its own
+		POINT pts[ 10 ];
+		for ( auto p = 0; p < 10; ++p ) {
+			float r = ( p % 2 == 0 ) ? radius : radius * 0.45f;
+			float a = angle * 2.f - pi / 2.f + pi * p / 5.f;
+			pts[ p ] = POINT{
+				static_cast<LONG>( starPos.x + r * std::cos( a ) ),
+				static_cast<LONG>( starPos.y + r * std::sin( a ) )
+			};
+		}
+		Polygon( hdc, pts, 10 );
 	}
 
-	auto oldFont = (HFONT)SelectObject( hdc, font_ );
-	auto oldMode = SetBkMode( hdc, TRANSPARENT );
-	auto oldAlign = SetTextAlign( hdc, TA_CENTER | TA_TOP );
-
-	auto headPos = player_->getPos( ) - Camera::getPos( );
-	TextLabel::drawOutlined( hdc, L"STUN",
-		static_cast<int>( headPos.x ), static_cast<int>( headPos.y - 100.f ), RGB( 255, 220, 0 ) );
-
-	SetTextAlign( hdc, oldAlign );
-	SetBkMode( hdc, oldMode );
-	SelectObject( hdc, oldFont );
+	SelectObject( hdc, oldPen );
+	SelectObject( hdc, oldBrush );
 }

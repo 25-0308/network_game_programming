@@ -90,7 +90,7 @@ public:
 	void update()override;
 	void render(HDC hdc)override;
 
-	void onCollision( Object* other ) override {}
+	void onCollision( Object* other ) override;
 	void onCollisionEntry( Object* other ) override;
 	void onCollisionExit( Object* other ) override;
 
@@ -159,6 +159,8 @@ private:
 	float stunT_;
 	float kickCooldown_;
 	float kickAnimT_;
+
+	void separateFrom( Player* other );
 
 	// movement animations wait until the kick motion has finished
 	void playAnim( const std::string& name ) {

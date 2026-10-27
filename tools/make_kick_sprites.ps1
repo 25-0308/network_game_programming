@@ -1,5 +1,5 @@
-# Builds assets/player_kick_left.png and player_kick_right.png:
-# frame 0 of the idle body sheet plus a leg and pixel-art boot swinging forward.
+# Builds assets/player_kick_left.png and player_kick_right.png from frame 0 of the idle body sheet:
+# the front shoe is cut out of the body and swung forward and up, the rest of the body stays put.
 #
 # run from PowerShell in any folder: & <repo>\tools\make_kick_sprites.ps1
 # frame size and count must match kickFrameCnt / the createAnimation call in Player.hpp
@@ -9,79 +9,71 @@ $assets = [System.IO.Path]::GetFullPath( (Join-Path $PSScriptRoot '..\HeadSoccer
 
 $frameW = 123; $frameH = 61
 $bodyX = 15; $bodyY = 22           # body (93x33) top-left inside a frame
-$pivotX = 81.5; $pivotY = 33.5     # hip, = player pos + (20, 48) for the left-side player
-$legLen = 20
-$px = 3                             # art pixel size used by the existing sprites
-$angles = @(40, 25, 0, -25, -40, -20, 10, 35)   # leg angle, 0 = straight forward, + = down
+$bodyW = 93; $bodyH = 33
 
-# boot drawn with toe toward +x and sole toward +y, origin at the ankle
-$boot = @(
-    '..WWW....',
-    '.WRRWW...',
-    'WWWWWWWW.',
-    'WWWWWWWWW',
-    'SSSSSSSSS'
+# front shoe inside the left-side body frame (the black shoe on the right half)
+$shoe = New-Object System.Drawing.Rectangle 47, 18, 34, 15
+
+# per frame: shoe move (dx, dy) and rotation in degrees, negative = toe up
+$keys = @(
+    @(-3, -2, 8),
+    @(4, -2, -10),
+    @(12, -6, -30),
+    @(18, -12, -50),
+    @(20, -16, -60),
+    @(16, -11, -45),
+    @(8, -5, -20),
+    @(2, -1, -5)
 )
-$colors = @{
-    'W' = [System.Drawing.Color]::FromArgb(255, 240, 240, 240)
-    'R' = [System.Drawing.Color]::FromArgb(255, 210, 40, 40)
-    'S' = [System.Drawing.Color]::FromArgb(255, 35, 35, 35)
-}
-$legColor = [System.Drawing.Color]::FromArgb(255, 45, 45, 45)
-
-function New-LegLayer($angle) {
-    $layer = New-Object System.Drawing.Bitmap $frameW, $frameH, ([System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
-    $g = [System.Drawing.Graphics]::FromImage($layer)
-    $g.SmoothingMode = 'None'
-    $g.PixelOffsetMode = 'Half'
-    $g.Clear([System.Drawing.Color]::Transparent)
-
-    $rad = $angle * [Math]::PI / 180
-    $endX = $pivotX + $legLen * [Math]::Cos($rad)
-    $endY = $pivotY + $legLen * [Math]::Sin($rad)
-
-    $pen = New-Object System.Drawing.Pen $legColor, 7
-    $g.DrawLine($pen, [single]$pivotX, [single]$pivotY, [single]$endX, [single]$endY)
-    $pen.Dispose()
-
-    # boot stands upright when the leg points down (90), so rotate by angle - 90
-    $g.TranslateTransform([single]$endX, [single]$endY)
-    $g.RotateTransform([single]($angle - 90))
-    for ($row = 0; $row -lt $boot.Count; $row++) {
-        for ($col = 0; $col -lt $boot[$row].Length; $col++) {
-            $ch = [string]$boot[$row][$col]
-            if ($ch -eq '.') { continue }
-            $brush = New-Object System.Drawing.SolidBrush $colors[$ch]
-            $g.FillRectangle($brush, [single](($col - 3) * $px), [single]($row * $px - 2), [single]$px, [single]$px)
-            $brush.Dispose()
-        }
-    }
-    $g.Dispose()
-    return $layer
-}
 
 function Build-Sheet($bodyFile, $outFile, $mirror) {
     $bodySheet = [System.Drawing.Bitmap]::FromFile("$assets\$bodyFile")
-    $sheet = New-Object System.Drawing.Bitmap ($frameW * $angles.Count), $frameH, ([System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
+
+    # work on the left-facing body; the right-side sheet is the mirrored result
+    $body = $bodySheet.Clone( (New-Object System.Drawing.Rectangle 0, 0, $bodyW, $bodyH), [System.Drawing.Imaging.PixelFormat]::Format32bppArgb )
+    if ($mirror) { $body.RotateFlip([System.Drawing.RotateFlipType]::RotateNoneFlipX) }
+
+    $shoeImg = $body.Clone($shoe, [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
+    for ($y = $shoe.Top; $y -lt $shoe.Bottom; $y++) {
+        for ($x = $shoe.Left; $x -lt $shoe.Right; $x++) {
+            $body.SetPixel($x, $y, [System.Drawing.Color]::Transparent)
+        }
+    }
+
+    $sheet = New-Object System.Drawing.Bitmap ($frameW * $keys.Count), $frameH, ([System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
     $g = [System.Drawing.Graphics]::FromImage($sheet)
     $g.Clear([System.Drawing.Color]::Transparent)
     $g.InterpolationMode = 'NearestNeighbor'
     $g.PixelOffsetMode = 'Half'
 
-    for ($i = 0; $i -lt $angles.Count; $i++) {
-        $leg = New-LegLayer $angles[$i]
-        if ($mirror) { $leg.RotateFlip([System.Drawing.RotateFlipType]::RotateNoneFlipX) }
+    $shoeCx = $bodyX + $shoe.Left + $shoe.Width / 2.0
+    $shoeCy = $bodyY + $shoe.Top + $shoe.Height / 2.0
 
-        # leg behind the body, so the hip joint is hidden
-        $g.DrawImage($leg, $i * $frameW, 0)
-        $g.DrawImage($bodySheet, (New-Object System.Drawing.Rectangle ($i * $frameW + $bodyX), $bodyY, 93, 33),
-            (New-Object System.Drawing.Rectangle 0, 0, 93, 33), [System.Drawing.GraphicsUnit]::Pixel)
-        $leg.Dispose()
+    for ($i = 0; $i -lt $keys.Count; $i++) {
+        $frame = New-Object System.Drawing.Bitmap $frameW, $frameH, ([System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
+        $fg = [System.Drawing.Graphics]::FromImage($frame)
+        $fg.Clear([System.Drawing.Color]::Transparent)
+        $fg.InterpolationMode = 'NearestNeighbor'
+        $fg.PixelOffsetMode = 'Half'
+
+        $fg.DrawImage($body, $bodyX, $bodyY, $bodyW, $bodyH)
+
+        $dx, $dy, $rot = $keys[$i]
+        $fg.TranslateTransform([single]($shoeCx + $dx), [single]($shoeCy + $dy))
+        $fg.RotateTransform([single]$rot)
+        $fg.DrawImage($shoeImg, [single](-$shoe.Width / 2.0), [single](-$shoe.Height / 2.0), [single]$shoe.Width, [single]$shoe.Height)
+        $fg.Dispose()
+
+        if ($mirror) { $frame.RotateFlip([System.Drawing.RotateFlipType]::RotateNoneFlipX) }
+        $g.DrawImage($frame, $i * $frameW, 0, $frameW, $frameH)
+        $frame.Dispose()
     }
 
     $g.Dispose()
     $sheet.Save("$assets\$outFile", [System.Drawing.Imaging.ImageFormat]::Png)
     $sheet.Dispose()
+    $shoeImg.Dispose()
+    $body.Dispose()
     $bodySheet.Dispose()
 }
 

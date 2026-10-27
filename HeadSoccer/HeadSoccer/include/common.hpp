@@ -38,7 +38,7 @@ enum class ObjectType {
 	Player,
 
 	GoalPost,
-	GoalUI,
+	Overlay,	// drawn after the players: goal screen, hp bars, stun stars
 
 	EOE
 };

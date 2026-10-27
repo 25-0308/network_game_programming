@@ -293,6 +293,44 @@ void Player::render( HDC hdc ) {
 
 void Player::onCollisionEntry( Object* other ) {
     getCollider( )->addCollCnt( );
+    onCollision( other );
+}
+
+void Player::onCollision( Object* other ) {
+    // both players get this callback, so only player1 resolves the pair
+    auto otherPlayer = dynamic_cast<Player*>( other );
+    if ( otherPlayer != nullptr && pnum_ == 1 ) {
+        separateFrom( otherPlayer );
+    }
+}
+
+void Player::separateFrom( Player* other ) {
+    auto mine = getCollider( );
+    auto theirs = other->getCollider( );
+
+    auto delta = theirs->getFinalPos( ) - mine->getFinalPos( );
+    float overlapX = ( mine->getScale( ).x + theirs->getScale( ).x ) / 2.f - std::abs( delta.x );
+    float overlapY = ( mine->getScale( ).y + theirs->getScale( ).y ) / 2.f - std::abs( delta.y );
+    if ( overlapX <= 0.f || overlapY <= 0.f ) {
+        return;
+    }
+
+    if ( overlapY < overlapX ) {
+        // landed on the other player's head: stand on it, and allow jumping off
+        Player* upper = delta.y > 0.f ? this : other;
+        upper->pos_.y -= overlapY;
+        upper->jspeed = 0.f;
+        upper->jumped = false;
+    }
+    else {
+        // side by side: push both apart by half the overlap
+        float dir = delta.x >= 0.f ? 1.f : -1.f;
+        pos_.x -= dir * overlapX / 2.f;
+        other->pos_.x += dir * overlapX / 2.f;
+    }
+
+    mine->update( pos_ );
+    theirs->update( other->pos_ );
 }
 
 void Player::onCollisionExit( Object* other ) {
