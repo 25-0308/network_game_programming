@@ -38,6 +38,7 @@ enum class ObjectType {
 	Player,
 
 	GoalPost,
+	GoalUI,
 
 	EOE
 };

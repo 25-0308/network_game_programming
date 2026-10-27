@@ -34,6 +34,12 @@ public:
 	Animation* find( const std::string& name );
 	void play( const std::string& name );
 
+	// for one-shot animations like a kick, which must start from the first frame every time
+	void playFromStart( const std::string& name ) {
+		play( name );
+		currAnim_->reset( );
+	}
+
 private:
 	std::map<std::string, Animation*> anims_;
 	Animation* currAnim_;

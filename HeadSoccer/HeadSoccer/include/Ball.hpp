@@ -20,6 +20,7 @@ public:
     void render(HDC hdc)override;
     void kickleft();
     void kickright();
+    void reset( PointFloat pos );
     void onCollisionEntry( Object* other ) override;
     void onCollision( Object* other ) override;
 private:

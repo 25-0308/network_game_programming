@@ -22,6 +22,12 @@ void Ball::render(HDC hdc) {
     componentRender(hdc);
 }
 
+void Ball::reset( PointFloat pos ) {
+    pos_ = pos;
+    velo_ = PointFloat( 1.0f, -100.0f );
+    getCollider( )->update( pos_ );
+}
+
 void Ball::update() {
 	if ( InputHandler::getKeyState( Key::R ) == KeyState::Tap ) {
         kickright( );

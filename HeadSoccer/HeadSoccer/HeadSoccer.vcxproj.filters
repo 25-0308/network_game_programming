@@ -120,6 +120,15 @@
     <ClInclude Include="include\Stopwatch.hpp">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="include\GoalManager.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\TextLabel.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\HealthBar.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
     <ClInclude Include="include\ResultScene.hpp">
       <Filter>include</Filter>
     </ClInclude>
@@ -198,6 +207,15 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\Stopwatch.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\GoalManager.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\TextLabel.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\HealthBar.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\InGameScene.cpp">

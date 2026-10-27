@@ -4,9 +4,12 @@
 #include "../include/CharacterInfo.hpp"
 #include "../include/Camera.hpp"
 #include "../include/Player.hpp"
+#include "../include/TextLabel.hpp"
 
 extern CharacterInfo player1;
 extern CharacterInfo player2;
+extern int p1GoalScore;
+extern int p2GoalScore;
 
 void ResultScene::entry( ) {
 	auto bg = new Background( "bg", "select_character_background.png", false );
@@ -62,15 +65,28 @@ void ResultScene::entry( ) {
 	p2->setPos( PointFloat( 980.f, 350.f ) );
 	addObject( ObjectType::Player, p2 );
 
-	auto win = new Background( "win", "win.png", true );
-	win->setName( "win" );
-	win->setPos( PointFloat( 300.f, 200.f ) );
-	addObject( ObjectType::Background, win );
+	// more goals wins; there's no draw image, so a draw is drawn as text
+	if ( p1GoalScore == p2GoalScore ) {
+		for ( auto x : { 300.f, 980.f } ) {
+			auto draw = new TextLabel( L"DRAW", 80, RGB( 255, 255, 255 ) );
+			draw->setName( "draw" );
+			draw->setPos( PointFloat( x, 200.f ) );
+			addObject( ObjectType::Background, draw );
+		}
+	}
+	else {
+		bool p1Won = p1GoalScore > p2GoalScore;
 
-	auto lose = new Background( "lose", "lose.png", true );
-	lose->setName( "lose" );
-	lose->setPos( PointFloat( 980.f, 200.f ) );
-	addObject( ObjectType::Background, lose );
+		auto win = new Background( "win", "win.png", true );
+		win->setName( "win" );
+		win->setPos( PointFloat( p1Won ? 300.f : 980.f, 200.f ) );
+		addObject( ObjectType::Background, win );
+
+		auto lose = new Background( "lose", "lose.png", true );
+		lose->setName( "lose" );
+		lose->setPos( PointFloat( p1Won ? 980.f : 300.f, 200.f ) );
+		addObject( ObjectType::Background, lose );
+	}
 
 	Camera::setPos( { 0.f, 0.f } );
 }

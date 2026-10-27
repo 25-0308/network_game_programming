@@ -22,8 +22,12 @@ public:
 		ldashed = false;
 		rdashed = false;
 		jumped = false;
+		hp_ = maxHp;
+		stunT_ = 0.0f;
+		kickCooldown_ = 0.0f;
+		kickAnimT_ = 0.0f;
 
-		
+
 		createAnimator( );
 		if ( lr == "left" ) {
 			auto idleAnimFilePath = fs::path( "assets/player_idle_left.png" );
@@ -39,6 +43,12 @@ public:
 				PointFloat( 104.5f, 30.f ), PointFloat( -104.5f, 0.f ), 6, 0.07f, PointFloat( 0.f, 53.f ) );
 			getAnimator( )->createAnimation( "player_run_back_left", runAnimImage, PointFloat( 0.f, 0.f ),
 				PointFloat( 104.5f, 30.f ), PointFloat( 104.5f, 0.f ), 6, 0.07f, PointFloat( 0.f, 53.f ) );
+
+			auto kickAnimFilePath = fs::path( "assets/player_kick_left.png" );
+			auto kickAnimImage = ResourceHandler::loadImage( "player_kick_left", fs::canonical( kickAnimFilePath ).string( ), true );
+
+			getAnimator( )->createAnimation( "player_kick_left", kickAnimImage, PointFloat( 0.f, 0.f ),
+				PointFloat( 123.f, 61.f ), PointFloat( 123.f, 0.f ), kickFrameCnt, kickFrameTime, PointFloat( 0.f, 45.f ) );
 
 			getAnimator( )->play( "player_idle_left" );
 		}
@@ -56,6 +66,12 @@ public:
 				PointFloat( 104.5f, 30.f ), PointFloat( 104.5f, 0.f ), 6, 0.07f, PointFloat( 0.f, 53.f ) );
 			getAnimator( )->createAnimation( "player_run_back_right", runAnimImage, PointFloat( 522.5f, 0.f ),
 				PointFloat( 104.5f, 30.f ), PointFloat( -104.5f, 0.f ), 6, 0.07f, PointFloat( 0.f, 53.f ) );
+
+			auto kickAnimFilePath = fs::path( "assets/player_kick_right.png" );
+			auto kickAnimImage = ResourceHandler::loadImage( "player_kick_right", fs::canonical( kickAnimFilePath ).string( ), true );
+
+			getAnimator( )->createAnimation( "player_kick_right", kickAnimImage, PointFloat( 0.f, 0.f ),
+				PointFloat( 123.f, 61.f ), PointFloat( 123.f, 0.f ), kickFrameCnt, kickFrameTime, PointFloat( 0.f, 45.f ) );
 
 			getAnimator( )->play( "player_idle_right" );
 		}
@@ -87,6 +103,37 @@ public:
 	}
 
 	void kick();
+	void takeHit( float damage );
+
+	bool isStunned( ) const {
+		return stunT_ > 0.f;
+	}
+	float getHp( ) const {
+		return hp_;
+	}
+
+	static constexpr float maxHp = 100.f;
+
+	// player_kick_*.png has 8 frames of 123x61
+	static constexpr std::uint8_t kickFrameCnt = 8;
+	static constexpr float kickFrameTime = 0.03f;
+
+	// back to the kickoff position with no jump or dash in progress
+	void reset( PointFloat pos ) {
+		pos_ = pos;
+		jspeed = 0.0f;
+		ldtimer_ = 0.0f;
+		rdtimer_ = 0.0f;
+		dashtimer = 0.0f;
+		dashintime = 0.0f;
+		ldashed = false;
+		rdashed = false;
+		jumped = false;
+		kickCooldown_ = 0.0f;
+		kickAnimT_ = 0.0f;
+		getAnimator( )->play( idleAnimName( ) );
+		getCollider( )->update( pos_ );
+	}
 
 private:
 	int speedstat;
@@ -108,5 +155,19 @@ private:
 	bool ldashed;
 	bool rdashed;
 	bool jumped;
+	float hp_;
+	float stunT_;
+	float kickCooldown_;
+	float kickAnimT_;
+
+	// movement animations wait until the kick motion has finished
+	void playAnim( const std::string& name ) {
+		if ( kickAnimT_ <= 0.f ) {
+			getAnimator( )->play( name );
+		}
+	}
+	const char* idleAnimName( ) const {
+		return pnum_ == 1 ? "player_idle_left" : "player_idle_right";
+	}
 };
 

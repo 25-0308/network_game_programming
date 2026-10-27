@@ -41,6 +41,11 @@ public:
 	void update( );
 	void render( HDC hdc, PointFloat objPos );
 
+	void reset( ) {
+		currFrame_ = 0;
+		accT_ = 0.f;
+	}
+
 	const std::string& name( ) const {
 		return name_;
 	}

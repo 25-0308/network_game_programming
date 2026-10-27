@@ -155,6 +155,8 @@
     <ClInclude Include="include\common.hpp" />
     <ClInclude Include="include\EventHandler.hpp" />
     <ClInclude Include="include\Game.hpp" />
+    <ClInclude Include="include\GoalManager.hpp" />
+    <ClInclude Include="include\HealthBar.hpp" />
     <ClInclude Include="include\Image.hpp" />
     <ClInclude Include="include\InGameScene.hpp" />
     <ClInclude Include="include\InputHandler.hpp" />
@@ -168,6 +170,7 @@
     <ClInclude Include="include\SceneHandler.hpp" />
     <ClInclude Include="include\StageScene.hpp" />
     <ClInclude Include="include\Stopwatch.hpp" />
+    <ClInclude Include="include\TextLabel.hpp" />
     <ClInclude Include="include\Timer.hpp" />
     <ClInclude Include="include\TitleScene.hpp" />
     <ClInclude Include="include\util.hpp" />
@@ -190,6 +193,8 @@
     <ClCompile Include="src\CollisionHandler.cpp" />
     <ClCompile Include="src\EventHandler.cpp" />
     <ClCompile Include="src\Game.cpp" />
+    <ClCompile Include="src\GoalManager.cpp" />
+    <ClCompile Include="src\HealthBar.cpp" />
     <ClCompile Include="src\InGameScene.cpp" />
     <ClCompile Include="src\InputHandler.cpp" />
     <ClCompile Include="src\Object.cpp" />
@@ -201,6 +206,7 @@
     <ClCompile Include="src\SceneHandler.cpp" />
     <ClCompile Include="src\StageScene.cpp" />
     <ClCompile Include="src\Stopwatch.cpp" />
+    <ClCompile Include="src\TextLabel.cpp" />
     <ClCompile Include="src\Timer.cpp" />
     <ClCompile Include="src\TitleScene.cpp" />
   </ItemGroup>

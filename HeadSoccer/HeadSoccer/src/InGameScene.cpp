@@ -7,6 +7,8 @@
 #include "../include/Player.hpp"
 #include "../include/CollisionHandler.hpp"
 #include "../include/Ball.hpp"
+#include "../include/GoalManager.hpp"
+#include "../include/HealthBar.hpp"
 
 extern StageNumber stageNum;
 extern CharacterInfo player1;
@@ -77,6 +79,14 @@ void InGameScene::entry( ) {
 	p2->setPos(PointFloat(980.f, 500.f));
 	addObject(ObjectType::Player, p2);
 
+	auto p1HealthBar = new HealthBar( p1, false );
+	p1HealthBar->setName( "player1_health_bar" );
+	addObject( ObjectType::InGameUI, p1HealthBar );
+
+	auto p2HealthBar = new HealthBar( p2, true );
+	p2HealthBar->setName( "player2_health_bar" );
+	addObject( ObjectType::InGameUI, p2HealthBar );
+
 	auto ball = new Ball("ball");
 	ball->setName("ball");
 	ball->setPos(PointFloat(640.f, 360.f));
@@ -112,15 +122,12 @@ void InGameScene::entry( ) {
 	player2Flag->setPos( PointFloat( 820.f, 60.f ) );
 	addObject( ObjectType::InGameUI, player2Flag );
 
-	auto zero = new Background( "zero", "goal_score_0.png", true );
-	zero->setName( "zero" );
-	zero->setPos( PointFloat( 460.f, 130.f ) );
-	addObject( ObjectType::InGameUI, zero );
+	p1GoalScore = 0;
+	p2GoalScore = 0;
 
-	auto nine = new Background( "nine", "goal_score_0.png", true );
-	nine->setName( "nine" );
-	nine->setPos( PointFloat( 820.f, 130.f ) );
-	addObject( ObjectType::InGameUI, nine );
+	// draws both scores and the goal screen, so it goes in the last group to render on top
+	auto goalManager = new GoalManager( );
+	addObject( ObjectType::GoalUI, goalManager );
 
 	//auto p1Power = new Background( "player1_power", "power_left.png", true );
 	//p1Power->setName( "player1_power" );
