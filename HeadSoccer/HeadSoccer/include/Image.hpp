@@ -104,14 +104,6 @@ public:
 		return image_.GetHeight( );
 	}
 
-	HDC getDC( ) const {
-		return image_.GetDC( );
-	}
-
-	void releaseDC( ) {
-		image_.ReleaseDC( );
-	}
-
 private:
 	CImage image_;
 };

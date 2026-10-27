@@ -27,22 +27,4 @@ void Animation::render( HDC hdc, PointFloat objPos ) {
 		static_cast<int>( sliceSize.x ),
 		static_cast<int>( sliceSize.y ) 
 	);
-
-	//auto imageDc = image_->getDC( );
-
-	//// ÁÂ¿ì ¹ÝÀü
-	//StretchBlt( 
-	//	hdc,
-	//	static_cast<int>( relativePos.x - sliceSize.x / 2.f + offset.x + sliceSize.x ),
-	//	static_cast<int>( relativePos.y - sliceSize.y / 2.f + offset.y ),
-	//	-sliceSize.x, static_cast<int>( sliceSize.y ),
-	//	imageDc,
-	//	static_cast<int>( lt.x ),
-	//	static_cast<int>( lt.y ),
-	//	static_cast<int>( sliceSize.x ),
-	//	static_cast<int>( sliceSize.y ),
-	//	SRCCOPY 
-	//);
-
-	//image_->releaseDC( );
 }

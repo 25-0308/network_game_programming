@@ -46,11 +46,6 @@ void InGameScene::entry( ) {
 	stopwatch->setName( "stopwatch" );
 	addObject( ObjectType::TimeUI, stopwatch );
 
-	//auto pauseBtn = new Button( "pause_button", "pause_button", true );
-	//pauseBtn->setName( "pause_button" );
-	//pauseBtn->setPos( PointFloat( 1230.f, 40.f ) );
-	//addObject( ObjectType::Button, pauseBtn );
-
 	auto p1ImageName = player1.getImage( );
 	auto temp = std::string( );
 	for ( auto c : p1ImageName ) {
@@ -128,39 +123,6 @@ void InGameScene::entry( ) {
 	// draws both scores and the goal screen, so it goes in the last group to render on top
 	auto goalManager = new GoalManager( );
 	addObject( ObjectType::Overlay, goalManager );
-
-	//auto p1Power = new Background( "player1_power", "power_left.png", true );
-	//p1Power->setName( "player1_power" );
-	//p1Power->setPos( PointFloat( 250.f, 60.f ) );
-	//addObject( ObjectType::InGameUI, p1Power );
-
-	//auto p2Power = new Background( "player2_power", "power_right.png", true );
-	//p2Power->setName( "player2_power" );
-	//p2Power->setPos( PointFloat( 1030.f, 60.f ) );
-	//addObject( ObjectType::InGameUI, p2Power );
-
-	//auto p1PowerGauge = new Background( "player1_power_gauge", "power_gauge_left.png", true );
-	//p1PowerGauge->setName( "player1_power_gauge" );
-	//p1PowerGauge->setPos( PointFloat( 250.f, 60.f ) );
-	//addObject( ObjectType::InGameUI, p1PowerGauge );
-
-	//auto p2PowerGauge = new Background( "player2_power_gauge", "power_gauge_right.png", true );
-	//p2PowerGauge->setName( "player2_power_gauge" );
-	//p2PowerGauge->setPos( PointFloat( 1030.f, 60.f ) );
-	//addObject( ObjectType::InGameUI, p2PowerGauge );
-
-	//auto p1FullPower = new Background( "player1_full_power", "full_power_left.png", true );
-	//p1FullPower->setName( "player1_full_power" );
-	//p1FullPower->setPos( PointFloat( 250.f, 63.f ) );
-	//addObject( ObjectType::InGameUI, p1FullPower );
-
-	//auto p2FullPower = new Background( "player2_full_power", "full_power_right.png", true );
-	//p2FullPower->setName( "player2_full_power" );
-	//p2FullPower->setPos( PointFloat( 1030.f, 63.f ) );
-	//addObject( ObjectType::InGameUI, p2FullPower );
-
-
-
 
 	auto leftGoalPost = new Background( "goalpost_left", "goalpost_left.png", true );
 	leftGoalPost->setName( "goalpost_left" );

@@ -1,9 +1,11 @@
+#ifndef __ball_hpp
+#define __ball_hpp
+
 #include "Object.hpp"
 #include "PointFloat.hpp"
 #include "ResourceHandler.hpp"
 #include "Image.hpp"
 
-#include "../include/Camera.hpp"
 
 class Ball : public Object {
 public:
@@ -13,6 +15,8 @@ public:
         velo_.y = -100.0f;
         createCollider( );
         getCollider( )->setScale( PointFloat( static_cast<float>( image->width( ) ), static_cast<float>( image->height( ) ) ) );
+        // update() keeps the ball inside the field using scale_ as its radius
+        setScale( PointFloat( image->width( ) / 2.f, image->height( ) / 2.f ) );
     }
     PointFloat velo_; // ¼Óµµ 
 
@@ -28,3 +32,5 @@ private:
 
     void bounceOffBox( const Collider* box, float minPushSpeed );
 };
+
+#endif	// __ball_hpp

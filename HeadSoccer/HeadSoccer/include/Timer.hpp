@@ -1,3 +1,6 @@
+#ifndef __timer_hpp
+#define __timer_hpp
+
 #include "common.hpp"
 
 class Timer {
@@ -22,4 +25,6 @@ private:
 	static double accT_;
 	static std::int32_t fps_;
 };
+
+#endif	// __timer_hpp
 

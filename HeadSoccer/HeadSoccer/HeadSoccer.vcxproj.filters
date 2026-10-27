@@ -164,16 +164,7 @@
     <ClCompile Include="src\EventHandler.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\Image.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Res.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="src\ResourceHandler.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Scene.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\SceneHandler.cpp">
@@ -200,9 +191,6 @@
     <ClCompile Include="src\ImageStorage.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\CharacterInfo.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="src\StageScene.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -226,18 +214,6 @@
     </ClCompile>
     <ClCompile Include="src\Ball.cpp">
       <Filter>리소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Image.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Res.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Scene.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="src\CharacterInfo.cpp">
-      <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

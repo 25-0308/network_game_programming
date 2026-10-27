@@ -1,7 +1,6 @@
 #include "../include/Ball.hpp"
 #include "../include/Timer.hpp"
 #include "../include/Camera.hpp"
-#include "../include/InputHandler.hpp"
 #include "../include/Player.hpp"
 
 void Ball::kickleft() {
@@ -29,25 +28,14 @@ void Ball::reset( PointFloat pos ) {
 }
 
 void Ball::update() {
-	if ( InputHandler::getKeyState( Key::R ) == KeyState::Tap ) {
-        kickright( );
-	}
-	if ( InputHandler::getKeyState( Key::Q ) == KeyState::Tap ) {
-		kickleft( );
-	}
-
     float dt = Timer::fdt();
-    static float timer = 0;
-    timer += dt;
-    if (timer >= 1.0f) { // 좌우 속도 감소
-        velo_.x = velo_.x * 0.7;
-        timer = 0.0f;
-    }
+    // keeps 70% of the horizontal speed per second, applied smoothly every frame
+    velo_.x *= std::pow( 0.7f, dt ); // 좌우 속도 감소
     velo_.y += 1000.0f * dt; // 중력
     pos_ += velo_ * dt;
 
     float fieldWidth = 1280.0f;
-    float fieldHeight = 615.5f;
+    float fieldHeight = 650.5f;  // ball bottom, the same ground line as the players' feet
 
     if (pos_.x - scale_.x <= 0.0f) { // 왼벽
         velo_.x = -velo_.x;

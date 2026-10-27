@@ -1,3 +1,6 @@
+#ifndef __player_hpp
+#define __player_hpp
+
 #include "Object.hpp"
 #include <string>
 #include "Resourcehandler.hpp"
@@ -9,13 +12,13 @@ public:
 		auto filePath = fs::path( "assets/" + name + "_player_" + lr + ".png" );
 		auto keyVal = name + "_player_" + lr;
 		image_ = ResourceHandler::loadImage( keyVal, fs::canonical( filePath ).string( ), true );
-		
-		kickpower = ks * 50.f;
+
 		jumppower =  -( 1250.f + (40.f*js));
 		speed = ss * 50.f;
 		jspeed = 0.0f;
 		ldtimer_ = 0.0f;
 		rdtimer_ = 0.0f;
+		// a dash moves 100px over its 0.075s (dashtimer), the same in every direction for both players
 		dashdis = 100.0f / 0.075f;
 		dashtimer = 0.0f;
 		dashintime = 0.0f;
@@ -81,9 +84,7 @@ public:
 		getCollider( )->setScale( PointFloat( 70.f, 90.f ) );
 		getCollider( )->setOffset( PointFloat( 0.f, 15.f ) );
 		
-		speedstat = ss;
 		kickstat = ks;
-		jumpstat = js;
 		pnum_ = num;
 	}
 
@@ -93,14 +94,6 @@ public:
 	void onCollision( Object* other ) override;
 	void onCollisionEntry( Object* other ) override;
 	void onCollisionExit( Object* other ) override;
-
-	void ispeed() {
-		speed += 0.1f;
-	}
-
-	void dspeed() {
-		if (speed > 0.1f) speed -= 0.1f;
-	}
 
 	void kick();
 	void takeHit( float damage );
@@ -136,13 +129,8 @@ public:
 	}
 
 private:
-	int speedstat;
 	int kickstat;
-	int jumpstat;
 	Image* image_;
-	std::string flag_;
-	std::string leftorright_;
-	float kickpower;
 	float jumppower;
 	int pnum_;
 	float speed;
@@ -172,4 +160,6 @@ private:
 		return pnum_ == 1 ? "player_idle_left" : "player_idle_right";
 	}
 };
+
+#endif	// __player_hpp
 

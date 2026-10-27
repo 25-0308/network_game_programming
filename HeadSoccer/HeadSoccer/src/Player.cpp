@@ -46,12 +46,13 @@ void Player::update() {
     if (pos_.y + scale_.y >= height) {
         pos_.y = height - scale_.y;
         jumped = false;
+        // otherwise it keeps growing while standing and the next fall starts at full speed
+        jspeed = 0.0f;
     }
 
     ldtimer_ -= dt;
     rdtimer_ -= dt;
     dashintime -= dt;
-    dashdis = 100.0f / 0.05f;
 
     if ( isStunned( ) ) {
         stunT_ -= dt;
@@ -112,7 +113,6 @@ void Player::update() {
         }
         else if (dashintime <= 0.0f && InputHandler::getKeyState(Key::D) == KeyState::Away && rdtimer_ >= 0.0f) {
             rdashed = true;
-            dashdis = 100.0f / 0.075f;
             rdtimer_ = 0.0f;
             dashtimer = 0.075f;
         }
@@ -187,7 +187,6 @@ void Player::update() {
         }
         else if (dashintime <= 0.0f && InputHandler::getKeyState(Key::L) == KeyState::Away && rdtimer_ >= 0.0f) {
             rdashed = true;
-            dashdis = 100.0f / 0.05f;
             rdtimer_ = 0.0f;
             dashtimer = 0.075f;
         }

@@ -6,8 +6,8 @@
 
 struct Event {
 	EventType type;
-	DWORD_PTR wParam;	// object type, scene type
-	DWORD_PTR lParam;	// object pointer
+	DWORD_PTR wParam;	// scene type, index delta
+	DWORD_PTR lParam;	// object pointer (ImageStorage)
 };
 
 class EventHandler {
@@ -21,7 +21,6 @@ public:
 
 private:
 	static std::vector<Event> events_;
-	static std::vector<Object*> deadObjects_;
 };
 
 #endif	// __event_handler_hpp

@@ -54,8 +54,6 @@ enum class SceneType {
 };
 
 enum class EventType {
-	CreateObject,
-	DestroyObject,
 	ChangeScene,
 	UpdateIndex,
 
