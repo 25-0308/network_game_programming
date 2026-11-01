@@ -5,6 +5,7 @@
 #include "../include/EventHandler.hpp"
 #include "../include/ResourceHandler.hpp"
 #include "../include/CollisionHandler.hpp"
+#include "../include/SoundHandler.hpp"
 
 void Game::init( HWND hWnd, POINT rsl ) {
 	hWnd_ = hWnd;
@@ -32,6 +33,7 @@ void Game::init( HWND hWnd, POINT rsl ) {
 
 	Timer::init( );
 	InputHandler::init( );
+	SoundHandler::init( );
 	SceneHandler::init( );
 }
 
@@ -57,6 +59,7 @@ void Game::release( ) {
 	DeleteObject( memBmp_ );
 
 	SceneHandler::release( );
+	SoundHandler::release( );
 	ResourceHandler::release( );
 }
 

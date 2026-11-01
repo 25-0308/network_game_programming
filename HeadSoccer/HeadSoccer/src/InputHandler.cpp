@@ -1,6 +1,7 @@
 #include "../include/common.hpp"
 #include "../include/Game.hpp"
 #include "../include/InputHandler.hpp"
+#include "../include/SoundHandler.hpp"
 
 #include <array>
 
@@ -58,6 +59,13 @@ void InputHandler::update( ) {
 	GetCursorPos( &pt );
 	ScreenToClient( Game::getHwnd( ), &pt );
 	mousePos_ = static_cast<PointFloat>( pt );
+
+	const auto resolution = Game::getRsl( );
+	if ( getKeyState( Key::MouseLbtn ) == KeyState::Tap
+		&& GetForegroundWindow( ) == Game::getHwnd( )
+		&& pt.x >= 0 && pt.y >= 0 && pt.x < resolution.x && pt.y < resolution.y ) {
+		SoundHandler::playEffect( SoundEffect::Click );
+	}
 }
 
 std::vector<InputInfo> InputHandler::inputInfo_;

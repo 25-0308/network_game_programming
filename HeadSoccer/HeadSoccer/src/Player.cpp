@@ -5,6 +5,7 @@
 #include "../include/EventHandler.hpp"
 #include "../include/SceneHandler.hpp"
 #include "../include/Ball.hpp"
+#include "../include/SoundHandler.hpp"
 
 void Player::update() {
     // Esc scene change is handled by player1 only, so the event is not queued twice
@@ -88,6 +89,7 @@ void Player::update() {
             ldashed = true;
             ldtimer_ = 0.0f;
             dashtimer = 0.075f;
+            SoundHandler::playEffect( SoundEffect::Dash );
         }
         if (ldashed) {
             pos_.x -= dashdis * dt;
@@ -115,6 +117,7 @@ void Player::update() {
             rdashed = true;
             rdtimer_ = 0.0f;
             dashtimer = 0.075f;
+            SoundHandler::playEffect( SoundEffect::Dash );
         }
         if (rdashed) {
             pos_.x += dashdis * dt;
@@ -162,6 +165,7 @@ void Player::update() {
             ldashed = true;
             ldtimer_ = 0.0f;
             dashtimer = 0.075f;
+            SoundHandler::playEffect( SoundEffect::Dash );
         }
         if (ldashed) {
             pos_.x -= dashdis * dt;
@@ -189,6 +193,7 @@ void Player::update() {
             rdashed = true;
             rdtimer_ = 0.0f;
             dashtimer = 0.075f;
+            SoundHandler::playEffect( SoundEffect::Dash );
         }
         if (rdashed) {
             pos_.x += dashdis * dt;
@@ -213,6 +218,7 @@ void Player::kick( ) {
         return;
     }
     kickCooldown_ = kickCooldownTime;
+    SoundHandler::playEffect( SoundEffect::PlayerKick );
 
     kickAnimT_ = kickFrameCnt * kickFrameTime;
     getAnimator( )->playFromStart( pnum_ == 1 ? "player_kick_left" : "player_kick_right" );
@@ -264,11 +270,12 @@ void Player::kick( ) {
 void Player::takeHit( float damage ) {
     const float stunTime = 2.f;
 
-    if ( isStunned( ) ) {
+    if ( isStunned( ) || damage <= 0.f ) {
         return;
     }
 
     hp_ = std::max( hp_ - damage, 0.f );
+    SoundHandler::playHitSound( characterName_ );
     if ( hp_ > 0.f ) {
         return;
     }

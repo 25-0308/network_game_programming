@@ -29,6 +29,9 @@ public:
     void onCollision( Object* other ) override;
 private:
     Image* image;
+    float impactSoundCooldown_ = 0.f;
+
+    void playImpactSound( float impactSpeed );
 
     void bounceOffBox( const Collider* box, float minPushSpeed );
 };

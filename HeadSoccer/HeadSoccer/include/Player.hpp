@@ -8,7 +8,8 @@
 class Player : public Object
 {
 public:
-	Player(const std::string& name, int ss, int ks, int js, const std::string& lr,int num) {
+	Player(const std::string& name, int ss, int ks, int js, const std::string& lr,int num)
+		: characterName_{ name } {
 		auto filePath = fs::path( "assets/" + name + "_player_" + lr + ".png" );
 		auto keyVal = name + "_player_" + lr;
 		image_ = ResourceHandler::loadImage( keyVal, fs::canonical( filePath ).string( ), true );
@@ -129,6 +130,7 @@ public:
 	}
 
 private:
+	const std::string characterName_;
 	int kickstat;
 	Image* image_;
 	float jumppower;

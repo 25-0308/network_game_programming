@@ -463,3 +463,7 @@ FodyWeavers.xsd
 # Additional files built by Visual Studio
 
 # End of https://www.toptal.com/developers/gitignore/api/c,c++,visualstudio
+
+# Codex 로컬 작업 문서, 보조 스크립트, 리포트, 임시 파일
+/.local-work/
+/AGENTS.md

@@ -6,6 +6,7 @@
 #include "../include/Player.hpp"
 #include "../include/Ball.hpp"
 #include "../include/TextLabel.hpp"
+#include "../include/SoundHandler.hpp"
 
 #pragma comment( lib, "msimg32" )
 
@@ -98,6 +99,7 @@ void GoalManager::scoreGoal( int scorer ) {
 	lastScorer_ = scorer;
 	celebrateT_ = 0.f;
 	celebrating_ = true;
+	SoundHandler::playEffect( SoundEffect::Goal );
 }
 
 void GoalManager::kickoff( ) {

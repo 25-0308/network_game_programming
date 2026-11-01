@@ -168,6 +168,7 @@
     <ClInclude Include="include\ResultScene.hpp" />
     <ClInclude Include="include\Scene.hpp" />
     <ClInclude Include="include\SceneHandler.hpp" />
+    <ClInclude Include="include\SoundHandler.hpp" />
     <ClInclude Include="include\StageScene.hpp" />
     <ClInclude Include="include\Stopwatch.hpp" />
     <ClInclude Include="include\TextLabel.hpp" />
@@ -176,6 +177,7 @@
     <ClInclude Include="include\util.hpp" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="third_party\miniaudio\miniaudio.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Ball.cpp" />
@@ -200,6 +202,10 @@
     <ClCompile Include="src\ResourceHandler.cpp" />
     <ClCompile Include="src\ResultScene.cpp" />
     <ClCompile Include="src\SceneHandler.cpp" />
+    <ClCompile Include="src\SoundHandler.cpp" />
+    <ClCompile Include="src\Miniaudio.cpp">
+      <WarningLevel>TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
     <ClCompile Include="src\StageScene.cpp" />
     <ClCompile Include="src\Stopwatch.cpp" />
     <ClCompile Include="src\TextLabel.cpp" />
@@ -214,6 +220,14 @@
     <Image Include="small.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ItemGroup>
+    <SoundAsset Include="assets\sounds\**\*.wav" />
+  </ItemGroup>
+  <Target Name="CopySoundAssets" AfterTargets="Build">
+    <Copy SourceFiles="@(SoundAsset)"
+          DestinationFiles="@(SoundAsset->'$(TargetDir)assets\sounds\%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true" />
+  </Target>
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
 </Project>

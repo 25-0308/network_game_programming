@@ -84,6 +84,10 @@
     <ClInclude Include="include\SceneHandler.hpp">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="include\SoundHandler.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="third_party\miniaudio\miniaudio.h" />
     <ClInclude Include="include\TitleScene.hpp">
       <Filter>include</Filter>
     </ClInclude>
@@ -168,6 +172,12 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\SceneHandler.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\SoundHandler.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Miniaudio.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\TitleScene.cpp">

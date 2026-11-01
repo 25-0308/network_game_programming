@@ -2,13 +2,16 @@
 #include "../include/Timer.hpp"
 #include "../include/Camera.hpp"
 #include "../include/Player.hpp"
+#include "../include/SoundHandler.hpp"
 
 void Ball::kickleft() {
+    playImpactSound( 2000.f );
     velo_.x -= 2000.0f;
     velo_.y -= 1000.0f;
 }
 
 void Ball::kickright( ) {
+    playImpactSound( 2000.f );
     velo_.x += 2000.0f;
     velo_.y -= 1000.0f;
 }
@@ -24,11 +27,13 @@ void Ball::render(HDC hdc) {
 void Ball::reset( PointFloat pos ) {
     pos_ = pos;
     velo_ = PointFloat( 1.0f, -100.0f );
+    impactSoundCooldown_ = 0.f;
     getCollider( )->update( pos_ );
 }
 
 void Ball::update() {
     float dt = Timer::fdt();
+    impactSoundCooldown_ = std::max( 0.f, impactSoundCooldown_ - dt );
     // keeps 70% of the horizontal speed per second, applied smoothly every frame
     velo_.x *= std::pow( 0.7f, dt ); // 좌우 속도 감소
     velo_.y += 1000.0f * dt; // 중력
@@ -38,24 +43,39 @@ void Ball::update() {
     float fieldHeight = 650.5f;  // ball bottom, the same ground line as the players' feet
 
     if (pos_.x - scale_.x <= 0.0f) { // 왼벽
+        playImpactSound( -velo_.x );
         velo_.x = -velo_.x;
         pos_.x = 0.0f + scale_.x;
     }
     else if (pos_.x + scale_.x >= fieldWidth) { // 오른벽
+        playImpactSound( velo_.x );
         velo_.x = -velo_.x;
         pos_.x = fieldWidth - scale_.x;
     }
 
     if (pos_.y - scale_.y <= 10.0f) { // 천장 충돌
+        playImpactSound( -velo_.y );
         velo_.y = -velo_.y;
         pos_.y = 20.0f + scale_.y;
     }
     else if (pos_.y + scale_.y >= fieldHeight) { //지면 충돌
+        playImpactSound( velo_.y );
         velo_.y = -velo_.y * 0.8f;
         pos_.y = fieldHeight - scale_.y;
     }
 
     componentUpdate( );
+}
+
+void Ball::playImpactSound( float impactSpeed ) {
+    // 정지 접촉과 같은 충돌의 짧은 간격 반복에는 효과음을 재생하지 않는다.
+    constexpr float minimumAudibleSpeed = 80.f;
+    constexpr float impactInterval = 0.06f;
+    if ( impactSpeed < minimumAudibleSpeed || impactSoundCooldown_ > 0.f ) {
+        return;
+    }
+    SoundHandler::playEffect( SoundEffect::BallImpact );
+    impactSoundCooldown_ = impactInterval;
 }
 
 void Ball::onCollisionEntry( Object* other ) {
@@ -126,6 +146,7 @@ void Ball::bounceOffBox( const Collider* box, float minPushSpeed ) {
 
     float vn = velo_.x * normal.x + velo_.y * normal.y;
     if ( vn < 0.f ) {
+        playImpactSound( -vn );
         velo_ -= normal * ( vn * ( 1.f + restitution ) );
         vn = -vn * restitution;
     }
