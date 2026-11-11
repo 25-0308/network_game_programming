@@ -27,6 +27,9 @@
     <ClInclude Include="include\Threads.hpp">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="include\Timer.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -36,6 +39,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\SessionManager.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Timer.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

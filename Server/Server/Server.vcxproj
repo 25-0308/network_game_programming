@@ -87,11 +87,13 @@
     <ClInclude Include="include\Network.hpp" />
     <ClInclude Include="include\SessionManager.hpp" />
     <ClInclude Include="include\Threads.hpp" />
+    <ClInclude Include="include\Timer.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Network.cpp" />
     <ClCompile Include="src\SessionManager.cpp" />
+    <ClCompile Include="src\Timer.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

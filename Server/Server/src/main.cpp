@@ -1,10 +1,14 @@
 ﻿#include "../include/common.hpp"
 #include "../include/Network.hpp"
 #include "../include/SessionManager.hpp"
+#include "../include/Timer.hpp"
 
 int main( ) {
 	// 콘솔에 한글 출력
 	SetConsoleOutputCP( CP_UTF8 );
+
+	// 델타 타임 기준 시각 (Timer::update는 게임 로직 루프에서 호출)
+	Timer::init( );
 
 	if ( !Network::init( ) ) {
 		return 1;
