@@ -1,4 +1,4 @@
-#include "../include/InGameScene.hpp"
+﻿#include "../include/InGameScene.hpp"
 #include "../include/Camera.hpp"
 #include "../include/Background.hpp"
 #include "../include/Button.hpp"
@@ -97,7 +97,7 @@ void InGameScene::entry( ) {
 	}
 	flagTemp += "_large.png";
 
-	// images are cached by key, so a fixed key would keep the first match's flag; key it by file name
+	// 이미지는 키로 캐시되므로 파일 이름을 키로 사용 (고정 키면 첫 경기 국기가 남음)
 	auto player1Flag = new Background( flagTemp, flagTemp, true );
 	player1Flag->setName( "player1_flag" );
 	player1Flag->setPos( PointFloat( 460.f, 60.f ) );
