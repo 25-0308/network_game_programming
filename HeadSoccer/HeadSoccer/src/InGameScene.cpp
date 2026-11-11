@@ -97,7 +97,8 @@ void InGameScene::entry( ) {
 	}
 	flagTemp += "_large.png";
 
-	auto player1Flag = new Background( "player1_flag", flagTemp, true );
+	// images are cached by key, so a fixed key would keep the first match's flag; key it by file name
+	auto player1Flag = new Background( flagTemp, flagTemp, true );
 	player1Flag->setName( "player1_flag" );
 	player1Flag->setPos( PointFloat( 460.f, 60.f ) );
 	addObject( ObjectType::InGameUI, player1Flag );
@@ -112,7 +113,7 @@ void InGameScene::entry( ) {
 	}
 	flagTemp2 += "_large.png";
 
-	auto player2Flag = new Background( "player2_flag", flagTemp2, true );
+	auto player2Flag = new Background( flagTemp2, flagTemp2, true );
 	player2Flag->setName( "player2_flag" );
 	player2Flag->setPos( PointFloat( 820.f, 60.f ) );
 	addObject( ObjectType::InGameUI, player2Flag );

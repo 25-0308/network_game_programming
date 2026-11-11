@@ -467,3 +467,7 @@ FodyWeavers.xsd
 # Codex 로컬 작업 문서, 보조 스크립트, 리포트, 임시 파일
 /.local-work/
 /AGENTS.md
+
+### Markdown ###
+*.md
+!README.md
