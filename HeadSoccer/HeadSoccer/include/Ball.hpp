@@ -5,23 +5,16 @@
 #include "PointFloat.hpp"
 #include "ResourceHandler.hpp"
 #include "Image.hpp"
+#include "../../../Server/Server/include/Ball.hpp"
 
 
 class Ball : public Object {
 public:
-    Ball(std::string name) {
-        image = ResourceHandler::loadImage(name, "assets/ball.png", true);
-        velo_.x = 1.0f;
-        velo_.y = -100.0f;
-        createCollider( );
-        getCollider( )->setScale( PointFloat( static_cast<float>( image->width( ) ), static_cast<float>( image->height( ) ) ) );
-        // update() keeps the ball inside the field using scale_ as its radius
-        setScale( PointFloat( image->width( ) / 2.f, image->height( ) / 2.f ) );
-    }
-    PointFloat velo_; // 속도 
+    Ball(std::string name);
 
     void update() override;
     void render(HDC hdc)override;
+    void applyState( const Protocol::S2C_Ball& state );
     void kickleft();
     void kickright();
     void reset( PointFloat pos );
@@ -29,6 +22,8 @@ public:
     void onCollision( Object* other ) override;
 private:
     Image* image;
+    // 로컬에서도 같은 계산식
+    ServerGame::Ball simulation_;
     float impactSoundCooldown_ = 0.f;
 
     void playImpactSound( float impactSpeed );

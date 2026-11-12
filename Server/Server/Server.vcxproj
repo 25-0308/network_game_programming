@@ -83,12 +83,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\..\Common\Protocol.hpp" />
+    <ClInclude Include="..\..\Common\PointFloat.hpp" />
     <ClInclude Include="include\common.hpp" />
+    <ClInclude Include="include\Ball.hpp" />
     <ClInclude Include="include\Network.hpp" />
     <ClInclude Include="include\SessionManager.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\Ball.cpp" />
     <ClCompile Include="src\Network.cpp" />
     <ClCompile Include="src\SessionManager.cpp" />
   </ItemGroup>

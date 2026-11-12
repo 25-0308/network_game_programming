@@ -15,7 +15,13 @@
     <ClInclude Include="..\..\Common\Protocol.hpp">
       <Filter>Common</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Common\PointFloat.hpp">
+      <Filter>Common</Filter>
+    </ClInclude>
     <ClInclude Include="include\common.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Ball.hpp">
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="include\Network.hpp">
@@ -27,6 +33,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Ball.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\Network.cpp">

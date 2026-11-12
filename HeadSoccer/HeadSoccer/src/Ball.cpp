@@ -4,16 +4,23 @@
 #include "../include/Player.hpp"
 #include "../include/SoundHandler.hpp"
 
+Ball::Ball(std::string name)
+    : image{ ResourceHandler::loadImage(name, "assets/ball.png", true) },
+      simulation_{ 0.f, 0.f, image->width() / 2.f } {
+    createCollider( );
+    getCollider( )->setScale( PointFloat( static_cast<float>( image->width( ) ),
+        static_cast<float>( image->height( ) ) ) );
+    setScale( PointFloat( image->width( ) / 2.f, image->height( ) / 2.f ) );
+}
+
 void Ball::kickleft() {
     playImpactSound( 2000.f );
-    velo_.x -= 2000.0f;
-    velo_.y -= 1000.0f;
+    simulation_.kickleft( );
 }
 
 void Ball::kickright( ) {
     playImpactSound( 2000.f );
-    velo_.x += 2000.0f;
-    velo_.y -= 1000.0f;
+    simulation_.kickright( );
 }
 
 void Ball::render(HDC hdc) {
@@ -26,45 +33,28 @@ void Ball::render(HDC hdc) {
 
 void Ball::reset( PointFloat pos ) {
     pos_ = pos;
-    velo_ = PointFloat( 1.0f, -100.0f );
+    simulation_.setPosition( pos.x, pos.y );
+    simulation_.setVelocity( 1.f, -100.f );
     impactSoundCooldown_ = 0.f;
     getCollider( )->update( pos_ );
 }
 
 void Ball::update() {
-    float dt = Timer::fdt();
+    const float dt = Timer::fdt( );
     impactSoundCooldown_ = std::max( 0.f, impactSoundCooldown_ - dt );
-    // keeps 70% of the horizontal speed per second, applied smoothly every frame
-    velo_.x *= std::pow( 0.7f, dt ); // 좌우 속도 감소
-    velo_.y += 1000.0f * dt; // 중력
-    pos_ += velo_ * dt;
 
-    float fieldWidth = 1280.0f;
-    float fieldHeight = 650.5f;  // ball bottom, the same ground line as the players' feet
-
-    if (pos_.x - scale_.x <= 0.0f) { // 왼벽
-        playImpactSound( -velo_.x );
-        velo_.x = -velo_.x;
-        pos_.x = 0.0f + scale_.x;
-    }
-    else if (pos_.x + scale_.x >= fieldWidth) { // 오른벽
-        playImpactSound( velo_.x );
-        velo_.x = -velo_.x;
-        pos_.x = fieldWidth - scale_.x;
-    }
-
-    if (pos_.y - scale_.y <= 10.0f) { // 천장 충돌
-        playImpactSound( -velo_.y );
-        velo_.y = -velo_.y;
-        pos_.y = 20.0f + scale_.y;
-    }
-    else if (pos_.y + scale_.y >= fieldHeight) { //지면 충돌
-        playImpactSound( velo_.y );
-        velo_.y = -velo_.y * 0.8f;
-        pos_.y = fieldHeight - scale_.y;
-    }
-
+    simulation_.setPosition( pos_.x, pos_.y );
+    const float impactSpeed = simulation_.update( dt );
+    applyState( simulation_.getState( ) );
+    playImpactSound( impactSpeed );
     componentUpdate( );
+}
+
+void Ball::applyState( const Protocol::S2C_Ball& state ) {
+    pos_ = PointFloat( state.x, state.y );
+    simulation_.setPosition( state.x, state.y );
+    simulation_.setVelocity( state.vx, state.vy );
+    getCollider( )->update( pos_ );
 }
 
 void Ball::playImpactSound( float impactSpeed ) {
@@ -96,6 +86,8 @@ void Ball::onCollision( Object* other ) {
 // Treat the ball as a circle and the other collider as a box: push the ball out of the box
 // and reflect the velocity along the contact normal.
 void Ball::bounceOffBox( const Collider* box, float minPushSpeed ) {
+    const auto state = simulation_.getState( );
+    auto velocity = PointFloat( state.vx, state.vy );
     const float radius = getCollider( )->getScale( ).x / 2.f;
     const float restitution = 0.8f;
 
@@ -144,15 +136,17 @@ void Ball::bounceOffBox( const Collider* box, float minPushSpeed ) {
         }
     }
 
-    float vn = velo_.x * normal.x + velo_.y * normal.y;
+    float vn = velocity.x * normal.x + velocity.y * normal.y;
     if ( vn < 0.f ) {
         playImpactSound( -vn );
-        velo_ -= normal * ( vn * ( 1.f + restitution ) );
+        velocity -= normal * ( vn * ( 1.f + restitution ) );
         vn = -vn * restitution;
     }
     if ( vn < minPushSpeed ) {
-        velo_ += normal * ( minPushSpeed - vn );
+        velocity += normal * ( minPushSpeed - vn );
     }
 
+    simulation_.setPosition( pos_.x, pos_.y );
+    simulation_.setVelocity( velocity.x, velocity.y );
     getCollider( )->update( pos_ );
 }

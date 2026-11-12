@@ -140,6 +140,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="include\Ball.hpp" />
+    <ClInclude Include="..\..\Server\Server\include\Ball.hpp" />
+    <ClInclude Include="..\..\Common\Protocol.hpp" />
+    <ClInclude Include="..\..\Common\PointFloat.hpp" />
     <ClInclude Include="include\CharacterInfo.hpp" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="HeadSoccer.h" />
@@ -181,6 +184,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Ball.cpp" />
+    <ClCompile Include="..\..\Server\Server\src\Ball.cpp">
+      <ObjectFileName>$(IntDir)ServerBall.obj</ObjectFileName>
+    </ClCompile>
     <ClCompile Include="HeadSoccer.cpp" />
     <ClCompile Include="src\ImageStorage.cpp" />
     <ClCompile Include="src\Animation.cpp" />
