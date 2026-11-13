@@ -28,7 +28,7 @@ private:
 
     void playImpactSound( float impactSpeed );
 
-    void bounceOffBox( const Collider* box, float minPushSpeed );
+    void handleCollision( Object* other, bool entering );
 };
 
 #endif	// __ball_hpp

@@ -32,11 +32,9 @@ void Ball::render(HDC hdc) {
 }
 
 void Ball::reset( PointFloat pos ) {
-    pos_ = pos;
-    simulation_.setPosition( pos.x, pos.y );
-    simulation_.setVelocity( 1.f, -100.f );
+    simulation_.reset( pos );
+    applyState( simulation_.getState( ) );
     impactSoundCooldown_ = 0.f;
-    getCollider( )->update( pos_ );
 }
 
 void Ball::update() {
@@ -69,84 +67,37 @@ void Ball::playImpactSound( float impactSpeed ) {
 }
 
 void Ball::onCollisionEntry( Object* other ) {
-    onCollision( other );
+    handleCollision( other, true );
 }
 
 void Ball::onCollision( Object* other ) {
-    if ( dynamic_cast<Player*>( other ) ) {
-        // minimum push so a ball resting against a moving player still gets pushed
-        bounceOffBox( other->getCollider( ), 300.f );
-    }
-    else if ( other->getName( ).starts_with( "goalpost" ) ) {
-        // crossbar doesn't move, so the ball can rest or roll on it
-        bounceOffBox( other->getCollider( ), 0.f );
-    }
+    handleCollision( other, false );
 }
 
-// Treat the ball as a circle and the other collider as a box: push the ball out of the box
-// and reflect the velocity along the contact normal.
-void Ball::bounceOffBox( const Collider* box, float minPushSpeed ) {
-    const auto state = simulation_.getState( );
-    auto velocity = PointFloat( state.vx, state.vy );
-    const float radius = getCollider( )->getScale( ).x / 2.f;
-    const float restitution = 0.8f;
+void Ball::handleCollision( Object* other, bool entering ) {
+    if ( other == nullptr || other->getCollider( ) == nullptr ) {
+        return;
+    }
 
-    auto boxPos = box->getFinalPos( );
-    auto half = box->getScale( ) / 2.f;
-    float left = boxPos.x - half.x;
-    float right = boxPos.x + half.x;
-    float top = boxPos.y - half.y;
-    float bottom = boxPos.y + half.y;
+    float minPushSpeed = 0.f;
+    if ( dynamic_cast<Player*>( other ) ) {
+        minPushSpeed = 300.f;
+    }
+    else if ( !other->getName( ).starts_with( "goalpost" ) ) {
+        return;
+    }
 
-    auto closest = PointFloat( std::clamp( pos_.x, left, right ), std::clamp( pos_.y, top, bottom ) );
-    auto normal = pos_ - closest;
-    float dist = std::hypot( normal.x, normal.y );
-
-    if ( dist > 0.f ) {
-        // AABB overlap only at a corner of the box, the circle itself is not touching
-        if ( dist >= radius ) {
-            return;
-        }
-        normal = normal / dist;
-        pos_ += normal * ( radius - dist );
+    const auto* collider = other->getCollider( );
+    simulation_.setPosition( pos_.x, pos_.y );
+    float impactSpeed;
+    if ( entering ) {
+        impactSpeed = simulation_.onCollisionEntry( collider->getFinalPos( ),
+            collider->getScale( ), minPushSpeed );
     }
     else {
-        // ball center is inside the box: leave through the nearest side
-        float toLeft = pos_.x - left;
-        float toRight = right - pos_.x;
-        float toTop = pos_.y - top;
-        float toBottom = bottom - pos_.y;
-        float nearest = std::min( { toLeft, toRight, toTop, toBottom } );
-
-        if ( nearest == toTop ) {
-            normal = PointFloat( 0.f, -1.f );
-            pos_.y = top - radius;
-        }
-        else if ( nearest == toLeft ) {
-            normal = PointFloat( -1.f, 0.f );
-            pos_.x = left - radius;
-        }
-        else if ( nearest == toRight ) {
-            normal = PointFloat( 1.f, 0.f );
-            pos_.x = right + radius;
-        }
-        else {
-            normal = PointFloat( 0.f, 1.f );
-            pos_.y = bottom + radius;
-        }
+        impactSpeed = simulation_.onCollision( collider->getFinalPos( ),
+            collider->getScale( ), minPushSpeed );
     }
-
-    float vn = velocity.x * normal.x + velocity.y * normal.y;
-    if ( vn < 0.f ) {
-        playImpactSound( -vn );
-        velocity -= normal * ( vn * ( 1.f + restitution ) );
-        vn = -vn * restitution;
-    }
-    if ( vn < minPushSpeed ) {
-        velocity += normal * ( minPushSpeed - vn );
-    }
-
-    simulation_.setPosition( pos_.x, pos_.y );
-    simulation_.setVelocity( velocity.x, velocity.y );
-    getCollider( )->update( pos_ );
+    applyState( simulation_.getState( ) );
+    playImpactSound( impactSpeed );
 }
