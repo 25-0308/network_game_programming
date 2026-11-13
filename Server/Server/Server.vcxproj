@@ -84,13 +84,17 @@
   <ItemGroup>
     <ClInclude Include="..\..\Common\GameConstants.hpp" />
     <ClInclude Include="..\..\Common\Protocol.hpp" />
+    <ClInclude Include="include\AABB.hpp" />
     <ClInclude Include="include\common.hpp" />
     <ClInclude Include="include\Network.hpp" />
+    <ClInclude Include="include\Player.hpp" />
     <ClInclude Include="include\SessionManager.hpp" />
+    <ClInclude Include="include\Vec2.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Network.cpp" />
+    <ClCompile Include="src\Player.cpp" />
     <ClCompile Include="src\SessionManager.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

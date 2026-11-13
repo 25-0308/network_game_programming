@@ -18,13 +18,22 @@
     <ClInclude Include="..\..\Common\Protocol.hpp">
       <Filter>Common</Filter>
     </ClInclude>
+    <ClInclude Include="include\AABB.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
     <ClInclude Include="include\common.hpp">
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="include\Network.hpp">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="include\Player.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
     <ClInclude Include="include\SessionManager.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Vec2.hpp">
       <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>
@@ -33,6 +42,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\Network.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Player.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\SessionManager.cpp">
