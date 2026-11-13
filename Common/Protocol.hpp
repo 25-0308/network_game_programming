@@ -38,12 +38,17 @@ namespace Protocol {
 	};
 
 	// C2S_Input::keys 비트
+	// 클라이언트는 자기 키만 보냄 (A 왼쪽, D 오른쪽, W 점프, S 발차기)
+	// 대시는 따로 비트를 두지 않고 서버가 Left, Right 비트가 꺼지는 순간을 보고 판정
 	enum InputKey : std::uint8_t {
 		KeyLeft = 1 << 0,
 		KeyRight = 1 << 1,
 		KeyJump = 1 << 2,
 		KeyKick = 1 << 3,
 	};
+
+	// 정의된 비트 전체, 받은 keys에서 이 밖의 비트는 무시
+	constexpr std::uint8_t inputKeyMask = KeyLeft | KeyRight | KeyJump | KeyKick;
 
 	enum class PlayerAnim : std::uint8_t {
 		Idle,

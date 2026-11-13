@@ -14,6 +14,7 @@
 #include <iostream>
 
 #include "Protocol.hpp"
+#include "GameConstants.hpp"
 
 // 받을 수 있는 패킷 최대 크기 (가장 큰 패킷보다 넉넉하게)
 constexpr int maxPacketSize = 64;

@@ -82,6 +82,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\Common\GameConstants.hpp" />
     <ClInclude Include="..\..\Common\Protocol.hpp" />
     <ClInclude Include="include\common.hpp" />
     <ClInclude Include="include\Network.hpp" />
