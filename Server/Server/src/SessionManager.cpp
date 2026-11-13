@@ -42,9 +42,17 @@ int SessionManager::count( ) {
 }
 
 void SessionManager::broadcast( const void* packet, int size ) {
-	for ( const auto& session : sessions_ ) {
-		if ( session.connected ) {
-			Network::sendPacket( session.sock, packet, size );
+	for ( auto i = 0; i < Protocol::maxPlayers; ++i ) {
+		if ( !sessions_[ i ].connected ) {
+			continue;
+		}
+
+		// 보내기 실패하면 접속이 끊긴 것으로 보고 자리를 비움
+		if ( !Network::sendPacket( sessions_[ i ].sock, packet, size ) ) {
+			auto playerNum = static_cast<std::uint8_t>( i + 1 );
+			remove( playerNum );
+			std::cout << "플레이어 " << static_cast<int>( playerNum ) << " 퇴장 ("
+				<< count( ) << "/" << Protocol::maxPlayers << ")\n";
 		}
 	}
 }

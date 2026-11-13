@@ -26,7 +26,6 @@ int APIENTRY wWinMain( _In_ HINSTANCE hInstance,
 	_In_ int       nCmdShow )
 {
 	UNREFERENCED_PARAMETER( hPrevInstance );
-	UNREFERENCED_PARAMETER( lpCmdLine );
 
 	// TODO: 여기에 코드를 입력합니다.
 
@@ -39,7 +38,11 @@ int APIENTRY wWinMain( _In_ HINSTANCE hInstance,
 		return FALSE;
 	}
 
-	Game::init( gHwnd, { 1280, 720 } );
+	// 실행 인자로 서버 IP를 받음, 없으면 로컬 서버
+	const wchar_t* serverIp = ( lpCmdLine && lpCmdLine[ 0 ] ) ? lpCmdLine : L"127.0.0.1";
+	if ( !Game::init( gHwnd, { 1280, 720 }, serverIp ) ) {
+		return FALSE;
+	}
 
 	HACCEL hAccelTable = LoadAccelerators( hInstance, MAKEINTRESOURCE( IDC_HEADSOCCER ) );
 

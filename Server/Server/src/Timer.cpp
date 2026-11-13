@@ -10,6 +10,7 @@ namespace {
 void Timer::init( ) {
 	QueryPerformanceFrequency( &freq_ );
 	QueryPerformanceCounter( &prevCnt_ );
+	startCnt_ = prevCnt_;
 }
 
 void Timer::update( ) {
@@ -18,10 +19,32 @@ void Timer::update( ) {
 	prevCnt_ = currCnt_;
 
 	dt_ = std::min( dt_, maxDt );
+	++frame_;
+
+	// 1초마다 FPS 갱신
+	++frameCnt_;
+	accT_ += dt_;
+	if ( accT_ >= 1.0 ) {
+		fps_ = frameCnt_;
+		frameCnt_ = 0;
+		accT_ -= 1.0;
+	}
+}
+
+double Timer::now( ) {
+	LARGE_INTEGER cnt;
+	QueryPerformanceCounter( &cnt );
+	return static_cast<double>( cnt.QuadPart - startCnt_.QuadPart ) / static_cast<double>( freq_.QuadPart );
 }
 
 LARGE_INTEGER Timer::prevCnt_;
 LARGE_INTEGER Timer::currCnt_;
 LARGE_INTEGER Timer::freq_;
+LARGE_INTEGER Timer::startCnt_;
 
 double Timer::dt_;
+std::uint32_t Timer::frame_;
+
+double Timer::accT_;
+std::uint16_t Timer::frameCnt_;
+std::uint16_t Timer::fps_;

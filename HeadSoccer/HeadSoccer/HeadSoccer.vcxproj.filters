@@ -103,6 +103,12 @@
     <ClInclude Include="include\CharacterScene.hpp">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="include\ClientNetwork.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Common\Protocol.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
     <ClInclude Include="include\Player.hpp">
       <Filter>include</Filter>
     </ClInclude>
@@ -193,6 +199,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\CharacterScene.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ClientNetwork.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\Player.cpp">

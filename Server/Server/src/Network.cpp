@@ -42,6 +42,23 @@ bool Network::listen( std::uint16_t port ) {
 	return true;
 }
 
+bool Network::waitAccept( double seconds ) {
+	fd_set readSet;
+	FD_ZERO( &readSet );
+	FD_SET( listenSock_, &readSet );
+
+	auto micro = static_cast<long>( seconds * 1'000'000.0 );
+	auto timeout = timeval{ micro / 1'000'000, micro % 1'000'000 };
+
+	// 리슨 소켓이 읽기 가능하면 접속 요청이 있음
+	int ret = select( 0, &readSet, nullptr, nullptr, &timeout );
+	if ( ret == SOCKET_ERROR ) {
+		printError( "select" );
+		return false;
+	}
+	return ret > 0;
+}
+
 SOCKET Network::accept( ) {
 	auto addr = sockaddr_in{ };
 	int addrLen = sizeof( addr );

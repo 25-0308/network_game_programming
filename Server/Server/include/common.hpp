@@ -18,4 +18,7 @@
 // 받을 수 있는 패킷 최대 크기 (가장 큰 패킷보다 넉넉하게)
 constexpr int maxPacketSize = 64;
 
+// 서버 초당 프레임 수
+constexpr int tickRate = 60;
+
 #endif	// __common_hpp

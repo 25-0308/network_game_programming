@@ -12,6 +12,9 @@ public:
 	// socket, bind, listen
 	static bool listen( std::uint16_t port );
 
+	// 최대 seconds 동안 새 접속을 기다림, 접속이 있으면 true
+	static bool waitAccept( double seconds );
+
 	// 접속 대기, 실패 시 INVALID_SOCKET
 	static SOCKET accept( );
 

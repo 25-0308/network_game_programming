@@ -27,6 +27,7 @@ namespace Protocol {
 		S2C_Goal,
 		S2C_GameEnd,
 		S2C_EnemyLeft,
+		S2C_Frame,
 	};
 
 	// 이름순 (ImageStorage의 map 순서와 같음)
@@ -150,6 +151,14 @@ namespace Protocol {
 		PacketHeader header{ sizeof( S2C_EnemyLeft ), PacketType::S2C_EnemyLeft };
 	};
 
+	// 서버 프레임 정보, 매 틱 전송 (클라는 받은 dt로 한 프레임 갱신)
+	struct S2C_Frame {
+		PacketHeader header{ sizeof( S2C_Frame ), PacketType::S2C_Frame };
+		std::uint32_t frame;	// 서버 프레임 번호
+		float dt;				// 이번 프레임 델타 타임 (초)
+		std::uint16_t fps;		// 서버 초당 프레임 수
+	};
+
 #pragma pack( pop )
 
 	static_assert( sizeof( PacketHeader ) == 3 );
@@ -166,6 +175,7 @@ namespace Protocol {
 	static_assert( sizeof( S2C_Goal ) == 5 );
 	static_assert( sizeof( S2C_GameEnd ) == 5 );
 	static_assert( sizeof( S2C_EnemyLeft ) == 3 );
+	static_assert( sizeof( S2C_Frame ) == 13 );
 
 }	// namespace Protocol
 
