@@ -8,8 +8,8 @@
 // 서버가 들고 있는 플레이어 상태
 // 클라이언트 Player에서 Animator, Image, ResourceHandler, Collider(GDI), InputHandler 의존을 뺀 것
 // Object를 상속하지 않고 값으로 들고 다님 (게임 로직 스레드만 접근하므로 락 없음)
-//
-// 이동, 점프, 대시 (11/11), 발차기, 피격, 기절, 밀어내기 (11/13)는 이 상태를 바꾸는 함수로 추가할 예정
+// 이동, 점프, 대시는 update에서 처리 (11/14)
+// 발차기, 피격, 기절, 밀어내기, 고정 dt 틱은 (11/15)추가할 예정
 class Player {
 public:
 	// 경기 시작 시 한 번 호출: 플레이어 번호와 캐릭터로 스탯을 정하고 HP를 채움
@@ -17,6 +17,10 @@ public:
 
 	// 골 이후 킥오프 위치로 (클라 Player::reset과 같이 HP, 기절은 그대로 둠)
 	void resetToKickoff( );
+
+	// 한 틱 진행 (클라 Player::update의 이동, 점프, 대시 부분)
+	// 이 틱까지 받은 입력을 쓰고, 끝나면 눌림, 뗌 기록을 비움
+	void update( float dt );
 
 	// ---------------- 입력 ----------------
 	// 클라 InputHandler의 Tap / Hold / Away를 비트로 대신함
@@ -38,7 +42,7 @@ public:
 		return ( released_ & key ) != 0;
 	}
 
-	// 한 틱 처리가 끝나면 호출
+	// 한 틱 처리가 끝나면 호출 (update가 마지막에 부름)
 	void clearInputEdges( ) {
 		tapped_ = 0;
 		released_ = 0;
@@ -102,6 +106,18 @@ public:
 	Protocol::PlayerState toState( ) const;
 
 private:
+	// update 단계
+	void applyGravity( float dt );
+	void tickTimers( float dt );
+	void tryJump( );
+
+	// 한 방향 키의 대시 판정, 대시 이동, 걷기를 처리
+	// dir: 왼쪽 -1, 오른쪽 +1
+	void moveHorizontal( Protocol::InputKey key, float dir,
+		float& myTapTimer, float& otherTapTimer, bool& dashing, float dt );
+
+	void clampToField( );
+
 	// 고정 정보
 	std::uint8_t playerNum_ = 0;	// 1(왼쪽) 또는 2(오른쪽)
 	Protocol::Character character_ = Protocol::Character::America;
