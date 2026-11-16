@@ -27,6 +27,12 @@ namespace GameConst {
 	constexpr float goalScreenTime = 3.f;		// 골 화면 후 킥오프까지
 	constexpr std::uint8_t stageCount = 4;		// 경기장 1 ~ 4
 
+	// ---------------- 서버 틱 ----------------
+
+	// 서버는 프레임 시간과 상관없이 항상 같은 dt로 경기를 진행함
+	constexpr int tickRate = 60;				// 초당 틱 수
+	constexpr float tickDt = 1.f / tickRate;	// 한 틱 시간 (초)
+
 	// 킥오프 위치 (InGameScene::entry, GoalManager::kickoff)
 	constexpr float ballStartX = 640.f;
 	constexpr float ballStartY = 360.f;

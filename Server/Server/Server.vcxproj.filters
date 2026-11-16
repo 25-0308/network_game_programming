@@ -30,7 +30,13 @@
     <ClInclude Include="include\Player.hpp">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="include\Match.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
     <ClInclude Include="include\SessionManager.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\TickClock.hpp">
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="include\Vec2.hpp">
@@ -47,7 +53,13 @@
     <ClCompile Include="src\Player.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\Match.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
     <ClCompile Include="src\SessionManager.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\TickClock.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

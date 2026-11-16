@@ -8,8 +8,8 @@
 // 서버가 들고 있는 플레이어 상태
 // 클라이언트 Player에서 Animator, Image, ResourceHandler, Collider(GDI), InputHandler 의존을 뺀 것
 // Object를 상속하지 않고 값으로 들고 다님 (게임 로직 스레드만 접근하므로 락 없음)
-// 이동, 점프, 대시는 update에서 처리 (11/14)
-// 발차기, 피격, 기절, 밀어내기, 고정 dt 틱은 (11/15)추가할 예정
+// 이동, 점프, 대시, 발차기 시작, 기절 타이머는 update에서 처리
+// 상대나 공이 필요한 판정(발차기 명중, 밀어내기)은 클라처럼 씬을 뒤지지 않고 Match가 두 플레이어를 넘겨 호출함
 class Player {
 public:
 	// 경기 시작 시 한 번 호출: 플레이어 번호와 캐릭터로 스탯을 정하고 HP를 채움
@@ -18,9 +18,35 @@ public:
 	// 골 이후 킥오프 위치로 (클라 Player::reset과 같이 HP, 기절은 그대로 둠)
 	void resetToKickoff( );
 
-	// 한 틱 진행 (클라 Player::update의 이동, 점프, 대시 부분)
+	// 한 틱 진행 (클라 Player::update에서 입력, 렌더, 씬 전환을 뺀 부분)
 	// 이 틱까지 받은 입력을 쓰고, 끝나면 눌림, 뗌 기록을 비움
+	// dt는 항상 GameConst::tickDt (Match::tick에서 호출)
 	void update( float dt );
+
+	// ---------------- 발차기, 피격, 밀어내기 ----------------
+
+	// 이번 update에서 발차기를 시작했는지 (클라 Player::kick이 불린 프레임)
+	// Match가 보고 kickHits, kickReachesBall로 판정함
+	bool justKicked( ) const {
+		return justKicked_;
+	}
+
+	// 발에서 상대 몸통 박스까지 kickHitReach 이내 (클라 Player::kick의 상대 판정)
+	bool kickHits( const Player& other ) const {
+		return other.body( ).distanceTo( kickFoot_ ) <= GameConst::kickHitReach;
+	}
+
+	// 발에서 공 중심까지 kickBallRange 이내 (클라 Player::kick의 공 판정)
+	bool kickReachesBall( Vec2 ballCenter ) const {
+		return ( ballCenter - kickFoot_ ).length( ) <= GameConst::kickBallRange;
+	}
+
+	// 발차기에 맞음, HP가 0이 되면 stunTime 동안 기절 (클라 Player::takeHit)
+	// 기절 중에는 맞지 않음
+	void takeHit( float damage );
+
+	// 몸통이 겹쳤으면 떼어 놓음 (클라 Player::separateFrom)
+	void separateFrom( Player& other );
 
 	// ---------------- 입력 ----------------
 	// 클라 InputHandler의 Tap / Hold / Away를 비트로 대신함
@@ -109,6 +135,7 @@ private:
 	// update 단계
 	void applyGravity( float dt );
 	void tickTimers( float dt );
+	void tryKick( );
 	void tryJump( );
 
 	// 한 방향 키의 대시 판정, 대시 이동, 걷기를 처리
@@ -143,6 +170,8 @@ private:
 	float stunT_ = 0.f;			// 남은 기절 시간
 	float kickCooldown_ = 0.f;
 	float kickAnimT_ = 0.f;		// 남은 발차기 모션 시간, 0보다 크면 anim은 Kick
+	bool justKicked_ = false;	// 이번 틱에 발차기 시작
+	Vec2 kickFoot_;				// 발차기를 시작한 순간의 발 위치
 	Protocol::PlayerAnim anim_ = Protocol::PlayerAnim::Idle;
 
 	// 입력

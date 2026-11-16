@@ -35,15 +35,19 @@ void Player::resetToKickoff( ) {
 	rDashing_ = false;
 	kickCooldown_ = 0.f;
 	kickAnimT_ = 0.f;
+	justKicked_ = false;
 	anim_ = Protocol::PlayerAnim::Idle;
 }
 
 void Player::update( float dt ) {
-	// 클라 Player::update와 같은 순서: 중력 -> 타이머 -> (기절이 아니면) 점프, 좌, 우 -> 벽
+	justKicked_ = false;
+
+	// 클라 Player::update와 같은 순서: 중력 -> 타이머 -> (기절이 아니면) 발차기, 점프, 좌, 우 -> 벽
 	applyGravity( dt );
 	tickTimers( dt );
 
 	if ( !isStunned( ) ) {
+		tryKick( );
 		tryJump( );
 		moveHorizontal( Protocol::KeyLeft, -1.f, lTapTimer_, rTapTimer_, lDashing_, dt );
 		moveHorizontal( Protocol::KeyRight, 1.f, rTapTimer_, lTapTimer_, rDashing_, dt );
@@ -74,7 +78,85 @@ void Player::tickTimers( float dt ) {
 	rTapTimer_ -= dt;
 	dashCooldown_ -= dt;
 
-	// 기절 감소, 발차기 쿨타임, 모션 시간은 11/15 발차기, 피격과 같이 옮김
+	// 기절이 끝나면 HP를 다 채워서 복귀
+	if ( isStunned( ) ) {
+		stunT_ -= dt;
+		if ( stunT_ <= 0.f ) {
+			stunT_ = 0.f;
+			hp_ = GameConst::playerMaxHp;
+		}
+	}
+
+	kickCooldown_ -= dt;
+	if ( kickAnimT_ > 0.f ) {
+		kickAnimT_ -= dt;
+		if ( kickAnimT_ <= 0.f ) {
+			// 클라는 모션이 끝나면 idle을 재생하고, 키를 누르고 있으면 다음 이동에서 다시 달리기로 바뀜
+			kickAnimT_ = 0.f;
+			anim_ = Protocol::PlayerAnim::Idle;
+		}
+	}
+}
+
+void Player::tryKick( ) {
+	// 클라 Player::kick의 앞부분 (쿨타임, 모션 시작)
+	// 명중 판정은 상대와 공이 필요하므로 Match가 justKicked를 보고 처리
+	if ( !isTapped( Protocol::KeyKick ) || kickCooldown_ > 0.f ) {
+		return;
+	}
+
+	kickCooldown_ = GameConst::kickCooldown;
+	kickAnimT_ = GameConst::kickAnimTime;
+	justKicked_ = true;
+
+	// update에서 중력, 타이머 다음, 점프와 좌우 이동 전에 불리므로 클라 kick()과 같은 시점의 발 위치
+	kickFoot_ = foot( );
+}
+
+void Player::takeHit( float damage ) {
+	if ( isStunned( ) || damage <= 0.f ) {
+		return;
+	}
+
+	hp_ = std::max( hp_ - damage, 0.f );
+	if ( hp_ > 0.f ) {
+		return;
+	}
+
+	// 기절: stunT_가 끝날 때까지 움직이지 못하고, 끝나면 HP를 채워 복귀
+	// 진행 중이던 대시와 발차기 모션은 끊음
+	stunT_ = GameConst::stunTime;
+	lDashing_ = false;
+	rDashing_ = false;
+	kickAnimT_ = 0.f;
+	anim_ = Protocol::PlayerAnim::Idle;
+}
+
+void Player::separateFrom( Player& other ) {
+	auto mine = body( );
+	auto theirs = other.body( );
+
+	auto overlap = mine.overlapAmount( theirs );
+	if ( overlap.x <= 0.f || overlap.y <= 0.f ) {
+		return;
+	}
+
+	auto delta = theirs.center - mine.center;
+
+	if ( overlap.y < overlap.x ) {
+		// 상대 머리 위에 착지: 그 위에 세우고 jumped_를 풀어 줌
+		// 단, 점프를 누른 틱에도 중력으로 다시 겹쳐 여기서 jspeed_가 0이 되므로 머리 위에서는 점프가 취소됨 (클라와 같은 방식으로 처리)
+		auto& upper = delta.y > 0.f ? *this : other;
+		upper.pos_.y -= overlap.y;
+		upper.jspeed_ = 0.f;
+		upper.jumped_ = false;
+	}
+	else {
+		// 옆으로 붙음: 겹친 길이의 반씩 서로 반대로 밀어냄
+		float dir = delta.x >= 0.f ? 1.f : -1.f;
+		pos_.x -= dir * overlap.x / 2.f;
+		other.pos_.x += dir * overlap.x / 2.f;
+	}
 }
 
 void Player::tryJump( ) {
