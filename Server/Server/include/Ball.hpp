@@ -25,8 +25,7 @@ namespace ServerGame {
     private:
         PointFloat pos_;
         PointFloat scale_;
-        float velo_x;
-        float velo_y;
+        PointFloat velo_;
 
         float bounceOffBox(PointFloat finalPos, PointFloat scale, float minPushSpeed);
     };

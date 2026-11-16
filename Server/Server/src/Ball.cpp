@@ -6,41 +6,41 @@
 namespace ServerGame {
 
     Ball::Ball(float x, float y, float radius)
-        : pos_{x, y}, scale_{radius, radius}, velo_x{1.f}, velo_y{-100.f} {}
+        : pos_{x, y}, scale_{radius, radius}, velo_{1.f, -100.f} {}
 
     float Ball::update(float dt) {
         if (!std::isfinite(dt) || dt <= 0.f) {
             return 0.f;
         }
 
-        velo_x *= std::pow(0.7f, dt);
-        velo_y += 1000.f * dt;
-        pos_.x += velo_x * dt;
-        pos_.y += velo_y * dt;
+        velo_.x *= std::pow(0.7f, dt);
+        velo_.y += 1000.f * dt;
+        pos_.x += velo_.x * dt;
+        pos_.y += velo_.y * dt;
 
         constexpr float fieldWidth = 1280.f;
         constexpr float fieldHeight = 650.5f;
         float impactSpeed = 0.f;
 
         if (pos_.x - scale_.x <= 0.f) {
-            impactSpeed = std::max(impactSpeed, -velo_x);
-            velo_x = -velo_x;
+            impactSpeed = std::max(impactSpeed, -velo_.x);
+            velo_.x = -velo_.x;
             pos_.x = scale_.x;
         }
         else if (pos_.x + scale_.x >= fieldWidth) {
-            impactSpeed = std::max(impactSpeed, velo_x);
-            velo_x = -velo_x;
+            impactSpeed = std::max(impactSpeed, velo_.x);
+            velo_.x = -velo_.x;
             pos_.x = fieldWidth - scale_.x;
         }
 
         if (pos_.y - scale_.y <= 10.f) {
-            impactSpeed = std::max(impactSpeed, -velo_y);
-            velo_y = -velo_y;
+            impactSpeed = std::max(impactSpeed, -velo_.y);
+            velo_.y = -velo_.y;
             pos_.y = 20.f + scale_.y;
         }
         else if (pos_.y + scale_.y >= fieldHeight) {
-            impactSpeed = std::max(impactSpeed, velo_y);
-            velo_y = -velo_y * 0.8f;
+            impactSpeed = std::max(impactSpeed, velo_.y);
+            velo_.y = -velo_.y * 0.8f;
             pos_.y = fieldHeight - scale_.y;
         }
 
@@ -48,19 +48,18 @@ namespace ServerGame {
     }
 
     void Ball::kickleft() {
-        velo_x -= 2000.f;
-        velo_y -= 1000.f;
+        velo_.x -= 2000.f;
+        velo_.y -= 1000.f;
     }
 
     void Ball::kickright() {
-        velo_x += 2000.f;
-        velo_y -= 1000.f;
+        velo_.x += 2000.f;
+        velo_.y -= 1000.f;
     }
 
     void Ball::reset(PointFloat pos) {
         pos_ = pos;
-        velo_x = 1.f;
-        velo_y = -100.f;
+        velo_ = PointFloat(1.f, -100.f);
     }
 
     float Ball::onCollisionEntry(PointFloat finalPos, PointFloat scale, float minPushSpeed) {
@@ -72,7 +71,6 @@ namespace ServerGame {
     }
 
     float Ball::bounceOffBox(PointFloat finalPos, PointFloat scale, float minPushSpeed) {
-        auto velocity = PointFloat(velo_x, velo_y);
         const float radius = scale_.x;
         const float restitution = 0.8f;
 
@@ -122,18 +120,16 @@ namespace ServerGame {
         }
 
         float impactSpeed = 0.f;
-        float vn = velocity.x * normal.x + velocity.y * normal.y;
+        float vn = velo_.x * normal.x + velo_.y * normal.y;
         if (vn < 0.f) {
             impactSpeed = -vn;
-            velocity -= normal * (vn * (1.f + restitution));
+            velo_ -= normal * (vn * (1.f + restitution));
             vn = -vn * restitution;
         }
         if (vn < minPushSpeed) {
-            velocity += normal * (minPushSpeed - vn);
+            velo_ += normal * (minPushSpeed - vn);
         }
 
-        velo_x = velocity.x;
-        velo_y = velocity.y;
         return impactSpeed;
     }
 
@@ -143,16 +139,15 @@ namespace ServerGame {
     }
 
     void Ball::setVelocity(float vx, float vy) {
-        velo_x = vx;
-        velo_y = vy;
+        velo_ = PointFloat(vx, vy);
     }
 
     Protocol::S2C_Ball Ball::getState() const {
         auto packet = Protocol::S2C_Ball{};
         packet.x = pos_.x;
         packet.y = pos_.y;
-        packet.vx = velo_x;
-        packet.vy = velo_y;
+        packet.vx = velo_.x;
+        packet.vy = velo_.y;
         return packet;
     }
 
