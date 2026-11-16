@@ -8,6 +8,7 @@
 #include "../include/SoundHandler.hpp"
 
 void Player::update() {
+    serverAnim_.reset( );
     // Esc scene change is handled by player1 only, so the event is not queued twice
     if ( pnum_ == 1 && InputHandler::getKeyState( Key::Esc ) == KeyState::Tap
         && SceneHandler::getCurrSceneType( ) == SceneType::Result ) {
@@ -286,6 +287,32 @@ void Player::takeHit( float damage ) {
     rdashed = false;
     kickAnimT_ = 0.f;
     getAnimator( )->play( idleAnimName( ) );
+}
+
+void Player::update( const Protocol::PlayerState& state ) {
+    pos_ = PointFloat( state.x, state.y );
+    hp_ = static_cast<float>( state.hp );
+    stunT_ = state.stunned ? 1.f : 0.f;
+
+    if ( !serverAnim_ || *serverAnim_ != state.anim ) {
+        const bool left = pnum_ == 1;
+        switch ( state.anim ) {
+        case Protocol::PlayerAnim::Idle:
+            getAnimator( )->play( idleAnimName( ) );
+            break;
+        case Protocol::PlayerAnim::RunFront:
+            getAnimator( )->play( left ? "player_run_front_left" : "player_run_front_right" );
+            break;
+        case Protocol::PlayerAnim::RunBack:
+            getAnimator( )->play( left ? "player_run_back_left" : "player_run_back_right" );
+            break;
+        case Protocol::PlayerAnim::Kick:
+            getAnimator( )->playFromStart( left ? "player_kick_left" : "player_kick_right" );
+            break;
+        }
+    }
+    serverAnim_ = state.anim;
+    componentUpdate( );
 }
 
 void Player::render( HDC hdc ) {

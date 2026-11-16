@@ -13,6 +13,7 @@ public:
     Ball(std::string name);
 
     void update() override;
+    void update( const Protocol::S2C_Ball& state );
     void render(HDC hdc)override;
     void applyState( const Protocol::S2C_Ball& state );
     void kickleft();

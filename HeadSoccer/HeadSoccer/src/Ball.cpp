@@ -48,6 +48,11 @@ void Ball::update() {
     componentUpdate( );
 }
 
+void Ball::update( const Protocol::S2C_Ball& state ) {
+    applyState( state );
+    componentUpdate( );
+}
+
 void Ball::applyState( const Protocol::S2C_Ball& state ) {
     pos_ = PointFloat( state.x, state.y );
     simulation_.setPosition( state.x, state.y );

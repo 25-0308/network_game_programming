@@ -4,6 +4,8 @@
 #include "Object.hpp"
 #include <string>
 #include "Resourcehandler.hpp"
+#include "../../../Common/Protocol.hpp"
+#include <optional>
 
 class Player : public Object
 {
@@ -90,6 +92,7 @@ public:
 	}
 
 	void update()override;
+	void update( const Protocol::PlayerState& state );
 	void render(HDC hdc)override;
 
 	void onCollision( Object* other ) override;
@@ -149,6 +152,7 @@ private:
 	float stunT_;
 	float kickCooldown_;
 	float kickAnimT_;
+	std::optional<Protocol::PlayerAnim> serverAnim_;
 
 	void separateFrom( Player* other );
 
