@@ -12,11 +12,17 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\Common\GameConstants.hpp">
+      <Filter>Common</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\Common\Protocol.hpp">
       <Filter>Common</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Common\PointFloat.hpp">
       <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="include\AABB.hpp">
+      <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="include\common.hpp">
       <Filter>include</Filter>
@@ -27,6 +33,12 @@
     <ClInclude Include="include\Network.hpp">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="include\Player.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Match.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
     <ClInclude Include="include\SessionManager.hpp">
       <Filter>include</Filter>
     </ClInclude>
@@ -34,6 +46,12 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="include\Timer.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\TickClock.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Vec2.hpp">
       <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>
@@ -47,10 +65,19 @@
     <ClCompile Include="src\Network.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\Player.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Match.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
     <ClCompile Include="src\SessionManager.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\Timer.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\TickClock.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

@@ -38,9 +38,14 @@ int APIENTRY wWinMain( _In_ HINSTANCE hInstance,
 		return FALSE;
 	}
 
-	// 실행 인자로 서버 IP를 받음, 없으면 로컬 서버
-	const wchar_t* serverIp = ( lpCmdLine && lpCmdLine[ 0 ] ) ? lpCmdLine : L"127.0.0.1";
-	if ( !Game::init( gHwnd, { 1280, 720 }, serverIp ) ) {
+	// 실행 인자로 서버 IP를 받음 (예: HeadSoccer.exe 192.168.0.10), 없으면 같은 PC의 서버
+	// 실행 방법에 따라 인자 앞뒤에 공백이 붙어 오므로 잘라냄
+	auto serverIp = std::wstring( lpCmdLine ? lpCmdLine : L"" );
+	auto first = serverIp.find_first_not_of( L" \t" );
+	auto last = serverIp.find_last_not_of( L" \t" );
+	serverIp = ( first == std::wstring::npos ) ? L"127.0.0.1" : serverIp.substr( first, last - first + 1 );
+
+	if ( !Game::init( gHwnd, { 1280, 720 }, serverIp.c_str( ) ) ) {
 		return FALSE;
 	}
 

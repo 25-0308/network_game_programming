@@ -82,21 +82,30 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\Common\GameConstants.hpp" />
     <ClInclude Include="..\..\Common\Protocol.hpp" />
     <ClInclude Include="..\..\Common\PointFloat.hpp" />
+    <ClInclude Include="include\AABB.hpp" />
     <ClInclude Include="include\common.hpp" />
     <ClInclude Include="include\Ball.hpp" />
+    <ClInclude Include="include\Match.hpp" />
     <ClInclude Include="include\Network.hpp" />
+    <ClInclude Include="include\Player.hpp" />
     <ClInclude Include="include\SessionManager.hpp" />
     <ClInclude Include="include\Threads.hpp" />
     <ClInclude Include="include\Timer.hpp" />
+    <ClInclude Include="include\TickClock.hpp" />
+    <ClInclude Include="include\Vec2.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Ball.cpp" />
+    <ClCompile Include="src\Match.cpp" />
     <ClCompile Include="src\Network.cpp" />
+    <ClCompile Include="src\Player.cpp" />
     <ClCompile Include="src\SessionManager.cpp" />
     <ClCompile Include="src\Timer.cpp" />
+    <ClCompile Include="src\TickClock.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
