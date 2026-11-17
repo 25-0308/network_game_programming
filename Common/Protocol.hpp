@@ -28,6 +28,7 @@ namespace Protocol {
 		S2C_GameEnd,
 		S2C_EnemyLeft,
 		S2C_Frame,
+		S2C_Collision,
 	};
 
 	// 이름순 (ImageStorage의 map 순서와 같음)
@@ -51,6 +52,21 @@ namespace Protocol {
 		RunFront,
 		RunBack,
 		Kick,
+	};
+
+	// S2C_Collision::type
+	enum class CollisionType : std::uint8_t {
+		PlayerPlayer,
+		BallPlayer,
+		PlayerGoalPost,
+		BallGoalPost,
+	};
+
+	// S2C_Collision::goalPost
+	enum class GoalPost : std::uint8_t {
+		None,
+		Left,
+		Right,
 	};
 
 #pragma pack( push, 1 )
@@ -159,6 +175,17 @@ namespace Protocol {
 		std::uint16_t fps;		// 서버 초당 프레임 수
 	};
 
+	// 충돌이 시작될 때 한 번만 보냄 (닿아 있는 동안 매 틱 보내지 않음)
+	// 충돌 후 위치와 속도는 같은 틱의 S2C_GameState, S2C_Ball로 받음
+	struct S2C_Collision {
+		PacketHeader header{ sizeof( S2C_Collision ), PacketType::S2C_Collision };
+		CollisionType type;
+		std::uint8_t playerNum;	// 부딪힌 플레이어 1, 2 (PlayerPlayer, BallGoalPost는 0)
+		GoalPost goalPost;		// 부딪힌 골대 (골대가 없는 충돌은 None)
+		float x;				// 충돌 지점 (이펙트, 사운드 위치용)
+		float y;
+	};
+
 #pragma pack( pop )
 
 	static_assert( sizeof( PacketHeader ) == 3 );
@@ -176,6 +203,7 @@ namespace Protocol {
 	static_assert( sizeof( S2C_GameEnd ) == 5 );
 	static_assert( sizeof( S2C_EnemyLeft ) == 3 );
 	static_assert( sizeof( S2C_Frame ) == 13 );
+	static_assert( sizeof( S2C_Collision ) == 14 );
 
 }	// namespace Protocol
 
