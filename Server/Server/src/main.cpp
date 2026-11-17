@@ -66,10 +66,10 @@ int main( ) {
 		return 1;
 	}
 
-	std::cout << "서버 시작 (포트 " << Protocol::serverPort << ", " << tickRate << " FPS)\n";
+	std::cout << "서버 시작 (포트 " << Protocol::serverPort << ", " << GameConst::tickRate << " FPS)\n";
 	std::cout << "클라이언트 접속 대기\n";
 
-	const double tickTime = 1.0 / tickRate;
+	const double tickTime = 1.0 / GameConst::tickRate;
 	Timer::init( );
 	double nextTick = tickTime;
 
@@ -85,7 +85,7 @@ int main( ) {
 
 		tick( );
 
-		// 정해진 간격으로 예약해서 평균 tickRate 유지, 많이 밀리면 지금부터 다시 시작
+		// 정해진 간격으로 예약해서 평균 GameConst::tickRate 유지, 많이 밀리면 지금부터 다시 시작
 		nextTick += tickTime;
 		if ( Timer::now( ) - nextTick > 0.25 ) {
 			nextTick = Timer::now( ) + tickTime;
