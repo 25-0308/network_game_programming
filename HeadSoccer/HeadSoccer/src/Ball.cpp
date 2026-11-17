@@ -4,16 +4,23 @@
 #include "../include/Player.hpp"
 #include "../include/SoundHandler.hpp"
 
+Ball::Ball(std::string name)
+    : image{ ResourceHandler::loadImage(name, "assets/ball.png", true) },
+      simulation_{ 0.f, 0.f, image->width() / 2.f } {
+    createCollider( );
+    getCollider( )->setScale( PointFloat( static_cast<float>( image->width( ) ),
+        static_cast<float>( image->height( ) ) ) );
+    setScale( PointFloat( image->width( ) / 2.f, image->height( ) / 2.f ) );
+}
+
 void Ball::kickleft() {
     playImpactSound( 2000.f );
-    velo_.x -= 2000.0f;
-    velo_.y -= 1000.0f;
+    simulation_.kickleft( );
 }
 
 void Ball::kickright( ) {
     playImpactSound( 2000.f );
-    velo_.x += 2000.0f;
-    velo_.y -= 1000.0f;
+    simulation_.kickright( );
 }
 
 void Ball::render(HDC hdc) {
@@ -25,46 +32,32 @@ void Ball::render(HDC hdc) {
 }
 
 void Ball::reset( PointFloat pos ) {
-    pos_ = pos;
-    velo_ = PointFloat( 1.0f, -100.0f );
+    simulation_.reset( pos );
+    applyState( simulation_.getState( ) );
     impactSoundCooldown_ = 0.f;
-    getCollider( )->update( pos_ );
 }
 
 void Ball::update() {
-    float dt = Timer::fdt();
+    const float dt = Timer::fdt( );
     impactSoundCooldown_ = std::max( 0.f, impactSoundCooldown_ - dt );
-    // keeps 70% of the horizontal speed per second, applied smoothly every frame
-    velo_.x *= std::pow( 0.7f, dt ); // 좌우 속도 감소
-    velo_.y += 1000.0f * dt; // 중력
-    pos_ += velo_ * dt;
 
-    float fieldWidth = 1280.0f;
-    float fieldHeight = 650.5f;  // ball bottom, the same ground line as the players' feet
-
-    if (pos_.x - scale_.x <= 0.0f) { // 왼벽
-        playImpactSound( -velo_.x );
-        velo_.x = -velo_.x;
-        pos_.x = 0.0f + scale_.x;
-    }
-    else if (pos_.x + scale_.x >= fieldWidth) { // 오른벽
-        playImpactSound( velo_.x );
-        velo_.x = -velo_.x;
-        pos_.x = fieldWidth - scale_.x;
-    }
-
-    if (pos_.y - scale_.y <= 10.0f) { // 천장 충돌
-        playImpactSound( -velo_.y );
-        velo_.y = -velo_.y;
-        pos_.y = 20.0f + scale_.y;
-    }
-    else if (pos_.y + scale_.y >= fieldHeight) { //지면 충돌
-        playImpactSound( velo_.y );
-        velo_.y = -velo_.y * 0.8f;
-        pos_.y = fieldHeight - scale_.y;
-    }
-
+    simulation_.setPosition( pos_.x, pos_.y );
+    const float impactSpeed = simulation_.update( dt );
+    applyState( simulation_.getState( ) );
+    playImpactSound( impactSpeed );
     componentUpdate( );
+}
+
+void Ball::update( const Protocol::S2C_Ball& state ) {
+    applyState( state );
+    componentUpdate( );
+}
+
+void Ball::applyState( const Protocol::S2C_Ball& state ) {
+    pos_ = PointFloat( state.x, state.y );
+    simulation_.setPosition( state.x, state.y );
+    simulation_.setVelocity( state.vx, state.vy );
+    getCollider( )->update( pos_ );
 }
 
 void Ball::playImpactSound( float impactSpeed ) {
@@ -79,80 +72,37 @@ void Ball::playImpactSound( float impactSpeed ) {
 }
 
 void Ball::onCollisionEntry( Object* other ) {
-    onCollision( other );
+    handleCollision( other, true );
 }
 
 void Ball::onCollision( Object* other ) {
-    if ( dynamic_cast<Player*>( other ) ) {
-        // minimum push so a ball resting against a moving player still gets pushed
-        bounceOffBox( other->getCollider( ), 300.f );
-    }
-    else if ( other->getName( ).starts_with( "goalpost" ) ) {
-        // crossbar doesn't move, so the ball can rest or roll on it
-        bounceOffBox( other->getCollider( ), 0.f );
-    }
+    handleCollision( other, false );
 }
 
-// Treat the ball as a circle and the other collider as a box: push the ball out of the box
-// and reflect the velocity along the contact normal.
-void Ball::bounceOffBox( const Collider* box, float minPushSpeed ) {
-    const float radius = getCollider( )->getScale( ).x / 2.f;
-    const float restitution = 0.8f;
+void Ball::handleCollision( Object* other, bool entering ) {
+    if ( other == nullptr || other->getCollider( ) == nullptr ) {
+        return;
+    }
 
-    auto boxPos = box->getFinalPos( );
-    auto half = box->getScale( ) / 2.f;
-    float left = boxPos.x - half.x;
-    float right = boxPos.x + half.x;
-    float top = boxPos.y - half.y;
-    float bottom = boxPos.y + half.y;
+    float minPushSpeed = 0.f;
+    if ( dynamic_cast<Player*>( other ) ) {
+        minPushSpeed = 300.f;
+    }
+    else if ( !other->getName( ).starts_with( "goalpost" ) ) {
+        return;
+    }
 
-    auto closest = PointFloat( std::clamp( pos_.x, left, right ), std::clamp( pos_.y, top, bottom ) );
-    auto normal = pos_ - closest;
-    float dist = std::hypot( normal.x, normal.y );
-
-    if ( dist > 0.f ) {
-        // AABB overlap only at a corner of the box, the circle itself is not touching
-        if ( dist >= radius ) {
-            return;
-        }
-        normal = normal / dist;
-        pos_ += normal * ( radius - dist );
+    const auto* collider = other->getCollider( );
+    simulation_.setPosition( pos_.x, pos_.y );
+    float impactSpeed;
+    if ( entering ) {
+        impactSpeed = simulation_.onCollisionEntry( collider->getFinalPos( ),
+            collider->getScale( ), minPushSpeed );
     }
     else {
-        // ball center is inside the box: leave through the nearest side
-        float toLeft = pos_.x - left;
-        float toRight = right - pos_.x;
-        float toTop = pos_.y - top;
-        float toBottom = bottom - pos_.y;
-        float nearest = std::min( { toLeft, toRight, toTop, toBottom } );
-
-        if ( nearest == toTop ) {
-            normal = PointFloat( 0.f, -1.f );
-            pos_.y = top - radius;
-        }
-        else if ( nearest == toLeft ) {
-            normal = PointFloat( -1.f, 0.f );
-            pos_.x = left - radius;
-        }
-        else if ( nearest == toRight ) {
-            normal = PointFloat( 1.f, 0.f );
-            pos_.x = right + radius;
-        }
-        else {
-            normal = PointFloat( 0.f, 1.f );
-            pos_.y = bottom + radius;
-        }
+        impactSpeed = simulation_.onCollision( collider->getFinalPos( ),
+            collider->getScale( ), minPushSpeed );
     }
-
-    float vn = velo_.x * normal.x + velo_.y * normal.y;
-    if ( vn < 0.f ) {
-        playImpactSound( -vn );
-        velo_ -= normal * ( vn * ( 1.f + restitution ) );
-        vn = -vn * restitution;
-    }
-    if ( vn < minPushSpeed ) {
-        velo_ += normal * ( minPushSpeed - vn );
-    }
-
-    getCollider( )->update( pos_ );
+    applyState( simulation_.getState( ) );
+    playImpactSound( impactSpeed );
 }
