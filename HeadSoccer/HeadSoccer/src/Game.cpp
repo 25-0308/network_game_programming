@@ -6,6 +6,7 @@
 #include "../include/ResourceHandler.hpp"
 #include "../include/CollisionHandler.hpp"
 #include "../include/SoundHandler.hpp"
+#include "../include/NetworkHandler.hpp"
 
 void Game::init( HWND hWnd, POINT rsl ) {
 	hWnd_ = hWnd;
@@ -34,12 +35,14 @@ void Game::init( HWND hWnd, POINT rsl ) {
 	Timer::init( );
 	InputHandler::init( );
 	SoundHandler::init( );
+	NetworkHandler::init( );
 	SceneHandler::init( );
 }
 
 void Game::start( ) {
 	Timer::update( );
 	InputHandler::update( );
+	NetworkHandler::update( );
 
 	SceneHandler::update( );
 	CollisionHandler::update( );
@@ -60,6 +63,7 @@ void Game::release( ) {
 
 	SceneHandler::release( );
 	SoundHandler::release( );
+	NetworkHandler::release( );
 	ResourceHandler::release( );
 }
 

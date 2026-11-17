@@ -15,6 +15,9 @@
     <Filter Include="src">
       <UniqueIdentifier>{6373015b-3e9e-41fd-b455-1bf4154567b0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Common">
+      <UniqueIdentifier>{8C5F4D3E-6F70-4182-AC9D-1E2F3A4B5C63}</UniqueIdentifier>
+    </Filter>
     <Filter Include="리소스 파일">
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
@@ -53,6 +56,12 @@
     </ClInclude>
     <ClInclude Include="include\Object.hpp">
       <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\NetworkHandler.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Common\Protocol.hpp">
+      <Filter>Common</Filter>
     </ClInclude>
     <ClInclude Include="include\Animation.hpp">
       <Filter>include</Filter>
@@ -151,6 +160,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\Object.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\NetworkHandler.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\Animation.cpp">
