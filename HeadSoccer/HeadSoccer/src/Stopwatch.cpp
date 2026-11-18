@@ -3,10 +3,11 @@
 #include "../include/Timer.hpp"
 #include "../include/Camera.hpp"
 #include "../include/EventHandler.hpp"
+#include "../include/SceneHandler.hpp"
 
 Stopwatch::Stopwatch( PointFloat pos, std::uint16_t time )
 	: Object( "Stopwatch", pos, PointFloat( ) ),
-	digits( ), time_{ time }, accT_{ 0.f } {
+	digits( ), time_{ time } {
 	digits.reserve( 10 );
 	for ( auto i = 0; i < 10; ++i ) {
 		auto fileName = std::to_string( i ) + ".png";
@@ -19,20 +20,14 @@ Stopwatch::Stopwatch( PointFloat pos, std::uint16_t time )
 }
 
 void Stopwatch::update( ) {
-	accT_ += Timer::fdt( );
-	if ( accT_ >= 1.f ) {
-		if ( time_ == 0 ) {
-			EventHandler::addEvent(
-				Event{
-					.type = EventType::ChangeScene,
-					.wParam = static_cast<DWORD_PTR>( SceneType::Result )
-				}
-			);
-			return;
-		}
-
-		time_ -= 1;
-		accT_ = 0.f;
+	time_ = Timer::remainTime( );
+	if ( Timer::isFinished( ) && SceneHandler::getCurrSceneType( ) == SceneType::InGame ) {
+		EventHandler::addEvent(
+			Event{
+				.type = EventType::ChangeScene,
+				.wParam = static_cast<DWORD_PTR>( SceneType::Result )
+			}
+		);
 	}
 }
 

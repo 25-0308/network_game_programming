@@ -46,6 +46,8 @@ namespace {
 		frame.frame = Timer::frame( );
 		frame.dt = Timer::fdt( );
 		frame.fps = Timer::fps( );
+		frame.remainTime = Timer::remainTime( );
+		frame.finished = Timer::isFinished( ) ? 1 : 0;
 		SessionManager::broadcast( &frame, sizeof( frame ) );
 	}
 }

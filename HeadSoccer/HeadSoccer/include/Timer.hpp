@@ -22,12 +22,20 @@ public:
 	static std::uint32_t frame( ) {
 		return frame_;
 	}
+	static std::uint16_t remainTime( ) {
+		return time_;
+	}
+	static bool isFinished( ) {
+		return finished_;
+	}
 
 private:
 	static double dt_;
 	static std::uint32_t frame_;
 	static std::uint16_t fps_;
 	static std::uint32_t shownFrame_;	// 창 제목에 마지막으로 표시한 프레임
+	static std::uint16_t time_;
+	static bool finished_;
 };
 
 #endif	// __timer_hpp

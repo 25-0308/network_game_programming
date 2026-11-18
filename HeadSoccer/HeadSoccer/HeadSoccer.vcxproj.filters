@@ -115,9 +115,6 @@
     <ClInclude Include="include\ClientNetwork.hpp">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\Protocol.hpp">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="include\Player.hpp">
       <Filter>include</Filter>
     </ClInclude>
@@ -137,9 +134,6 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Server\Server\include\Ball.hpp">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Common\Protocol.hpp">
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Common\PointFloat.hpp">

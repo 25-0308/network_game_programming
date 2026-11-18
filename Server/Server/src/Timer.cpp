@@ -11,6 +11,10 @@ void Timer::init( ) {
 	QueryPerformanceFrequency( &freq_ );
 	QueryPerformanceCounter( &prevCnt_ );
 	startCnt_ = prevCnt_;
+	time_ = GameConst::matchTime;
+	matchAccT_ = 0.f;
+	running_ = false;
+	finished_ = false;
 }
 
 void Timer::update( ) {
@@ -29,6 +33,25 @@ void Timer::update( ) {
 		frameCnt_ = 0;
 		accT_ -= 1.0;
 	}
+
+	if ( running_ ) {
+		matchAccT_ += fdt( );
+		while ( matchAccT_ >= 1.f && time_ > 0 ) {
+			time_ -= 1;
+			matchAccT_ -= 1.f;
+		}
+		if ( time_ == 0 ) {
+			running_ = false;
+			finished_ = true;
+		}
+	}
+}
+
+void Timer::startMatch( std::uint16_t time ) {
+	time_ = time;
+	matchAccT_ = 0.f;
+	running_ = time_ > 0;
+	finished_ = time_ == 0;
 }
 
 double Timer::now( ) {
@@ -48,3 +71,8 @@ std::uint32_t Timer::frame_;
 double Timer::accT_;
 std::uint16_t Timer::frameCnt_;
 std::uint16_t Timer::fps_;
+
+std::uint16_t Timer::time_;
+float Timer::matchAccT_;
+bool Timer::running_;
+bool Timer::finished_;

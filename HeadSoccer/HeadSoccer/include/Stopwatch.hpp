@@ -19,7 +19,6 @@ public:
 private:
 	std::vector<Image*> digits;
 	std::uint16_t time_;
-	float accT_;
 };
 
 #endif  // __stopwatch_hpp

@@ -7,6 +7,8 @@ void Timer::setFrame( const Protocol::S2C_Frame& frame ) {
 	dt_ = frame.dt;
 	frame_ = frame.frame;
 	fps_ = frame.fps;
+	time_ = frame.remainTime;
+	finished_ = frame.finished != 0;
 }
 
 void Timer::render( ) {
@@ -25,3 +27,5 @@ double Timer::dt_;
 std::uint32_t Timer::frame_;
 std::uint16_t Timer::fps_;
 std::uint32_t Timer::shownFrame_;
+std::uint16_t Timer::time_;
+bool Timer::finished_;

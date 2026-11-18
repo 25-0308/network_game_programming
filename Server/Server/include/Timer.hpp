@@ -11,6 +11,15 @@ public:
 	// 한 프레임 진행: dt, 프레임 번호, FPS 갱신
 	static void update( );
 
+	// 경기 시작 시 호출한다. 서버 실행 및 접속만으로는 카운트다운하지 않는다.
+	static void startMatch( std::uint16_t time = GameConst::matchTime );
+	static std::uint16_t remainTime( ) {
+		return time_;
+	}
+	static bool isFinished( ) {
+		return finished_;
+	}
+
 	// init 이후 지난 시간 (틱 간격 맞추기용)
 	static double now( );
 
@@ -40,6 +49,11 @@ private:
 	static double accT_;
 	static std::uint16_t frameCnt_;
 	static std::uint16_t fps_;
+
+	static std::uint16_t time_;
+	static float matchAccT_;
+	static bool running_;
+	static bool finished_;
 };
 
 #endif	// __timer_hpp

@@ -1,8 +1,11 @@
 ﻿#include "../include/Match.hpp"
 
+#include "../include/Timer.hpp"
+
 void Match::start( Protocol::Character p1Character, Protocol::Character p2Character ) {
 	players_[ 0 ].init( 1, p1Character );
 	players_[ 1 ].init( 2, p2Character );
+	Timer::startMatch( );
 }
 
 void Match::applyInput( std::uint8_t playerNum, std::uint8_t keys ) {
