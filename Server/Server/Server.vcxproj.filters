@@ -48,9 +48,6 @@
     <ClInclude Include="include\Timer.hpp">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="include\TickClock.hpp">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="include\Vec2.hpp">
       <Filter>include</Filter>
     </ClInclude>
@@ -75,9 +72,6 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\Timer.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="src\TickClock.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
