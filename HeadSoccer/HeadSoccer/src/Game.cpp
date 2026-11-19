@@ -7,6 +7,7 @@
 #include "../include/ResourceHandler.hpp"
 #include "../include/CollisionHandler.hpp"
 #include "../include/SoundHandler.hpp"
+#include "../include/Player.hpp"
 
 #include <cstdio>
 
@@ -60,7 +61,8 @@ void Game::start( ) {
 		return;
 	}
 
-	// 받은 패킷을 순서대로 처리 (S2C_Frame마다 한 프레임 갱신)
+	// 처리 지점: 렌더 전에 받은 패킷을 순서대로 처리
+	// (S2C_Frame마다 한 프레임 갱신, S2C_GameState는 Player에 서버 상태 적용)
 	auto packet = std::vector<char>( );
 	while ( ClientNetwork::popPacket( packet ) ) {
 		handlePacket( packet );
@@ -116,9 +118,32 @@ void Game::handlePacket( const std::vector<char>& packet ) {
 		}
 		break;
 	}
+	case Protocol::PacketType::S2C_GameState: {
+		if ( packet.size( ) == sizeof( Protocol::S2C_GameState ) ) {
+			applyPlayerStates( *reinterpret_cast<const Protocol::S2C_GameState*>( packet.data( ) ) );
+		}
+		break;
+	}
 	default:
 		// 나머지 패킷은 이후 일정에서 처리
 		break;
+	}
+}
+
+void Game::applyPlayerStates( const Protocol::S2C_GameState& state ) {
+	// 경기 중이 아니면 Player 오브젝트가 없음
+	if ( SceneHandler::getCurrSceneType( ) != SceneType::InGame ) {
+		return;
+	}
+
+	// players[0]은 1P, players[1]은 2P
+	for ( Object* obj : SceneHandler::getCurrScene( )->getGroup( ObjectType::Player ) ) {
+		auto player = static_cast<Player*>( obj );
+		auto num = player->getPlayerNum( );
+		if ( num < 1 || num > Protocol::maxPlayers ) {
+			continue;
+		}
+		player->update( state.players[ num - 1 ] );
 	}
 }
 

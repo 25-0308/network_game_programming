@@ -1,12 +1,32 @@
 ﻿#include "../include/ClientNetwork.hpp"
 
 #include <cstdio>
+#include <cstring>
 
 #pragma comment( lib, "ws2_32" )
 
 namespace {
 	// 받을 수 있는 패킷 최대 크기
 	constexpr std::uint16_t maxPacketSize = 64;
+
+	// 서버가 보내는 패킷의 정해진 크기, 모르는 타입은 0 (헤더의 size만 보고 건너뜀)
+	constexpr std::uint16_t expectedSize( Protocol::PacketType type ) {
+		using Protocol::PacketType;
+		switch ( type ) {
+		case PacketType::S2C_Login:				return sizeof( Protocol::S2C_Login );
+		case PacketType::S2C_ChangeScene:		return sizeof( Protocol::S2C_ChangeScene );
+		case PacketType::S2C_CharacterSelected:	return sizeof( Protocol::S2C_CharacterSelected );
+		case PacketType::S2C_GameStart:			return sizeof( Protocol::S2C_GameStart );
+		case PacketType::S2C_GameState:			return sizeof( Protocol::S2C_GameState );
+		case PacketType::S2C_Ball:				return sizeof( Protocol::S2C_Ball );
+		case PacketType::S2C_Goal:				return sizeof( Protocol::S2C_Goal );
+		case PacketType::S2C_GameEnd:			return sizeof( Protocol::S2C_GameEnd );
+		case PacketType::S2C_EnemyLeft:			return sizeof( Protocol::S2C_EnemyLeft );
+		case PacketType::S2C_Frame:				return sizeof( Protocol::S2C_Frame );
+		case PacketType::S2C_Collision:			return sizeof( Protocol::S2C_Collision );
+		default:								return 0;
+		}
+	}
 }
 
 bool ClientNetwork::connect( const wchar_t* ip, std::uint16_t port ) {
@@ -68,21 +88,38 @@ bool ClientNetwork::poll( ) {
 		return false;
 	}
 
-	// 헤더의 size만큼 모였으면 패킷 하나로 떼어냄
+	// recv 한 번에 패킷 일부만 오거나 여러 개가 붙어 올 수 있으므로
+	// 헤더의 size만큼 모였을 때만 패킷 하나로 떼어내고, 덜 온 나머지는 다음 poll까지 남겨 둠
 	constexpr std::size_t headerSize = sizeof( Protocol::PacketHeader );
-	while ( recvBuf_.size( ) >= headerSize ) {
-		auto header = reinterpret_cast<const Protocol::PacketHeader*>( recvBuf_.data( ) );
-		if ( header->size < headerSize || header->size > maxPacketSize ) {
-			std::printf( "잘못된 패킷 크기: %u\n", header->size );
+	std::size_t offset = 0;
+	while ( recvBuf_.size( ) - offset >= headerSize ) {
+		auto header = Protocol::PacketHeader{ };
+		std::memcpy( &header, recvBuf_.data( ) + offset, headerSize );
+
+		if ( header.size < headerSize || header.size > maxPacketSize ) {
+			std::printf( "잘못된 패킷 크기: %u (type %u)\n", header.size, static_cast<unsigned>( header.type ) );
 			return false;
 		}
-		if ( recvBuf_.size( ) < header->size ) {
+
+		// 정해진 크기와 다르면 이후 바이트의 경계도 어긋나 있으므로 끊음
+		auto expected = expectedSize( header.type );
+		if ( expected != 0 && header.size != expected ) {
+			std::printf( "패킷 크기 불일치: type %u, %u (기대 %u)\n",
+				static_cast<unsigned>( header.type ), header.size, expected );
+			return false;
+		}
+
+		if ( recvBuf_.size( ) - offset < header.size ) {
 			break;
 		}
 
-		packets_.emplace( recvBuf_.begin( ), recvBuf_.begin( ) + header->size );
-		recvBuf_.erase( recvBuf_.begin( ), recvBuf_.begin( ) + header->size );
+		auto begin = recvBuf_.begin( ) + offset;
+		packets_.emplace( begin, begin + header.size );
+		offset += header.size;
 	}
+
+	// 쓴 앞부분은 한 번에 지움 (패킷마다 지우면 남은 데이터를 매번 앞으로 옮김)
+	recvBuf_.erase( recvBuf_.begin( ), recvBuf_.begin( ) + offset );
 
 	return true;
 }

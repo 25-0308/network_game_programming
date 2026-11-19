@@ -2,6 +2,7 @@
 #define __game_hpp
 
 #include "common.hpp"
+#include "Protocol.hpp"
 
 class Game {
 public:
@@ -24,6 +25,9 @@ private:
 
 	// 받은 패킷 하나 처리
 	static void handlePacket( const std::vector<char>& packet );
+
+	// S2C_GameState의 두 플레이어 상태를 InGame 씬의 Player에 적용
+	static void applyPlayerStates( const Protocol::S2C_GameState& state );
 
 	static HWND hWnd_;
 	static HDC hDC_;
