@@ -30,6 +30,15 @@
     <ClInclude Include="include\Ball.hpp">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="include\GameLogic.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Job.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\JobQueue.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
     <ClInclude Include="include\Network.hpp">
       <Filter>include</Filter>
     </ClInclude>
@@ -59,6 +68,12 @@
     <ClCompile Include="src\Ball.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\GameLogic.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\JobQueue.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
     <ClCompile Include="src\Network.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -69,6 +84,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\SessionManager.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Threads.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\Timer.cpp">
