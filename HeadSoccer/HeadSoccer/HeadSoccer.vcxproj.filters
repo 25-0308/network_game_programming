@@ -57,9 +57,6 @@
     <ClInclude Include="include\Object.hpp">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="include\NetworkHandler.hpp">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Common\Protocol.hpp">
       <Filter>Common</Filter>
     </ClInclude>
@@ -115,9 +112,6 @@
     <ClInclude Include="include\ClientNetwork.hpp">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Common\Protocol.hpp">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="include\Player.hpp">
       <Filter>include</Filter>
     </ClInclude>
@@ -137,9 +131,6 @@
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Server\Server\include\Ball.hpp">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Common\Protocol.hpp">
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Common\PointFloat.hpp">
@@ -175,9 +166,6 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\Object.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="src\NetworkHandler.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\Animation.cpp">

@@ -154,7 +154,6 @@
     <ClInclude Include="..\..\Common\Protocol.hpp" />
     <ClInclude Include="include\Ball.hpp" />
     <ClInclude Include="..\..\Server\Server\include\Ball.hpp" />
-    <ClInclude Include="..\..\Common\Protocol.hpp" />
     <ClInclude Include="..\..\Common\PointFloat.hpp" />
     <ClInclude Include="include\CharacterInfo.hpp" />
     <ClInclude Include="framework.h" />
@@ -167,7 +166,6 @@
     <ClInclude Include="include\Camera.hpp" />
     <ClInclude Include="include\CharacterScene.hpp" />
     <ClInclude Include="include\ClientNetwork.hpp" />
-    <ClInclude Include="..\..\Common\Protocol.hpp" />
     <ClInclude Include="include\Collider.hpp" />
     <ClInclude Include="include\CollisionHandler.hpp" />
     <ClInclude Include="include\common.hpp" />
@@ -178,7 +176,6 @@
     <ClInclude Include="include\Image.hpp" />
     <ClInclude Include="include\InGameScene.hpp" />
     <ClInclude Include="include\InputHandler.hpp" />
-    <ClInclude Include="include\NetworkHandler.hpp" />
     <ClInclude Include="include\Object.hpp" />
     <ClInclude Include="include\Player.hpp" />
     <ClInclude Include="include\PointFloat.hpp" />
@@ -220,7 +217,6 @@
     <ClCompile Include="src\HealthBar.cpp" />
     <ClCompile Include="src\InGameScene.cpp" />
     <ClCompile Include="src\InputHandler.cpp" />
-    <ClCompile Include="src\NetworkHandler.cpp" />
     <ClCompile Include="src\Object.cpp" />
     <ClCompile Include="src\Player.cpp" />
     <ClCompile Include="src\ResourceHandler.cpp" />
