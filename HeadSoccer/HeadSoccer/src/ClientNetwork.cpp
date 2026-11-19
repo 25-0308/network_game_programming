@@ -66,10 +66,16 @@ void ClientNetwork::release( ) {
 		closesocket( sock_ );
 		sock_ = INVALID_SOCKET;
 	}
+	sendBuf_.clear( );
 	WSACleanup( );
 }
 
 bool ClientNetwork::poll( ) {
+	// 지난번에 다 못 보낸 데이터부터 보냄
+	if ( !flushSend( ) ) {
+		return false;
+	}
+
 	char buffer[ 512 ];
 
 	// 지금 도착한 데이터를 전부 읽음
@@ -133,7 +139,37 @@ bool ClientNetwork::popPacket( std::vector<char>& packet ) {
 	return true;
 }
 
+bool ClientNetwork::sendPacket( const void* packet, int size ) {
+	if ( sock_ == INVALID_SOCKET ) {
+		return false;
+	}
+
+	// 앞서 못 보낸 데이터 뒤에 붙여야 순서가 유지됨
+	auto data = static_cast<const char*>( packet );
+	sendBuf_.insert( sendBuf_.end( ), data, data + size );
+	return flushSend( );
+}
+
+bool ClientNetwork::flushSend( ) {
+	std::size_t sent = 0;
+	while ( sent < sendBuf_.size( ) ) {
+		int ret = send( sock_, sendBuf_.data( ) + sent, static_cast<int>( sendBuf_.size( ) - sent ), 0 );
+		if ( ret > 0 ) {
+			sent += ret;
+			continue;
+		}
+		if ( ret == SOCKET_ERROR && WSAGetLastError( ) == WSAEWOULDBLOCK ) {
+			break;	// 송신 버퍼가 참, 나머지는 다음에 보냄
+		}
+		return false;
+	}
+
+	sendBuf_.erase( sendBuf_.begin( ), sendBuf_.begin( ) + sent );
+	return true;
+}
+
 SOCKET ClientNetwork::sock_ = INVALID_SOCKET;
 std::vector<char> ClientNetwork::recvBuf_;
+std::vector<char> ClientNetwork::sendBuf_;
 std::queue<std::vector<char>> ClientNetwork::packets_;
 std::uint8_t ClientNetwork::playerNum_ = 0;

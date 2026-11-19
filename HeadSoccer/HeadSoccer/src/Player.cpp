@@ -1,4 +1,4 @@
-#include "../include/Player.hpp"
+﻿#include "../include/Player.hpp"
 #include "../include/Timer.hpp"
 #include "../include/InputHandler.hpp"
 #include "../include/Camera.hpp"
@@ -6,11 +6,15 @@
 #include "../include/SceneHandler.hpp"
 #include "../include/Ball.hpp"
 #include "../include/SoundHandler.hpp"
+#include "../include/ClientNetwork.hpp"
 
 void Player::update() {
     serverAnim_.reset( );
-    // Esc scene change is handled by player1 only, so the event is not queued twice
-    if ( pnum_ == 1 && InputHandler::getKeyState( Key::Esc ) == KeyState::Tap
+    // 이 클라이언트가 조작하는 Player만 키를 읽음 (상대 Player는 키에 반응하지 않음)
+    const bool mine = pnum_ == ClientNetwork::getPlayerNum( );
+
+    // Esc 씬 전환은 내 Player 하나만 처리해서 이벤트가 두 번 쌓이지 않게 함
+    if ( mine && InputHandler::getKeyState( Key::Esc ) == KeyState::Tap
         && SceneHandler::getCurrSceneType( ) == SceneType::Result ) {
         EventHandler::addEvent(
             Event{
@@ -25,7 +29,7 @@ void Player::update() {
 		return;
     }
 
-	if ( pnum_ == 1 && InputHandler::getKeyState( Key::Esc ) == KeyState::Tap ) {
+	if ( mine && InputHandler::getKeyState( Key::Esc ) == KeyState::Tap ) {
 		EventHandler::addEvent( 
             Event{
 				.type = EventType::ChangeScene,
@@ -72,7 +76,8 @@ void Player::update() {
         }
     }
 
-    if (pnum_==1 && !isStunned()) {
+    // 1P, 2P 모두 W 점프, A 왼쪽, D 오른쪽, S 발차기 (C2S_Input으로 보내는 키와 같음)
+    if (pnum_==1 && mine && !isStunned()) {
         if (InputHandler::getKeyState(Key::S) == KeyState::Tap) {
             kick();
         }
@@ -139,30 +144,30 @@ void Player::update() {
         }
     }
 
-    if (pnum_ == 2 && !isStunned()) {
-        if (InputHandler::getKeyState(Key::K) == KeyState::Tap) {
+    if (pnum_ == 2 && mine && !isStunned()) {
+        if (InputHandler::getKeyState(Key::S) == KeyState::Tap) {
             kick();
         }
 
-        if (jumped == false && InputHandler::getKeyState(Key::I) == KeyState::Tap) {
+        if (jumped == false && InputHandler::getKeyState(Key::W) == KeyState::Tap) {
             jspeed = jumppower;
             jumped = true;
         }
 
-        if (InputHandler::getKeyState(Key::J) == KeyState::Tap ||
-            InputHandler::getKeyState(Key::J) == KeyState::Hold) {
+        if (InputHandler::getKeyState(Key::A) == KeyState::Tap ||
+            InputHandler::getKeyState(Key::A) == KeyState::Hold) {
             pos_.x -= speed * dt;
 			playAnim( "player_run_front_right" );
         }
-		else if ( InputHandler::getKeyState( Key::J ) == KeyState::Away ) {
+		else if ( InputHandler::getKeyState( Key::A ) == KeyState::Away ) {
 			playAnim( "player_idle_right" );
 		}
 
-        if (dashintime <= 0.0f && InputHandler::getKeyState(Key::J) == KeyState::Away && ldtimer_ <= 0.0f) {
+        if (dashintime <= 0.0f && InputHandler::getKeyState(Key::A) == KeyState::Away && ldtimer_ <= 0.0f) {
             ldtimer_ = 0.3f;
             rdtimer_ = 0.0f;
         }
-        else if (dashintime <= 0.0f && InputHandler::getKeyState(Key::J) == KeyState::Away && ldtimer_ >= 0.0f) {
+        else if (dashintime <= 0.0f && InputHandler::getKeyState(Key::A) == KeyState::Away && ldtimer_ >= 0.0f) {
             ldashed = true;
             ldtimer_ = 0.0f;
             dashtimer = 0.075f;
@@ -177,20 +182,20 @@ void Player::update() {
             }
         }
 
-        if (InputHandler::getKeyState(Key::L) == KeyState::Tap ||
-            InputHandler::getKeyState(Key::L) == KeyState::Hold) {
+        if (InputHandler::getKeyState(Key::D) == KeyState::Tap ||
+            InputHandler::getKeyState(Key::D) == KeyState::Hold) {
             pos_.x += speed * dt;
 			playAnim( "player_run_back_right" );
         }
-		else if ( InputHandler::getKeyState( Key::L ) == KeyState::Away ) {
+		else if ( InputHandler::getKeyState( Key::D ) == KeyState::Away ) {
 			playAnim( "player_idle_right" );
 		}
 
-        if (dashintime <= 0.0f && InputHandler::getKeyState(Key::L) == KeyState::Away && rdtimer_ <= 0.0f) {
+        if (dashintime <= 0.0f && InputHandler::getKeyState(Key::D) == KeyState::Away && rdtimer_ <= 0.0f) {
             ldtimer_ = 0.0f;
             rdtimer_ = 0.3f;
         }
-        else if (dashintime <= 0.0f && InputHandler::getKeyState(Key::L) == KeyState::Away && rdtimer_ >= 0.0f) {
+        else if (dashintime <= 0.0f && InputHandler::getKeyState(Key::D) == KeyState::Away && rdtimer_ >= 0.0f) {
             rdashed = true;
             rdtimer_ = 0.0f;
             dashtimer = 0.075f;

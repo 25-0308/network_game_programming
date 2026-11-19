@@ -92,11 +92,48 @@ void Game::release( ) {
 
 void Game::step( ) {
 	InputHandler::update( );
+	sendInput( );
 
 	SceneHandler::update( );
 	CollisionHandler::update( );
 
 	EventHandler::update( );
+}
+
+void Game::sendInput( ) {
+	// 자리를 배정받기 전에는 보낼 대상이 없음
+	if ( ClientNetwork::getPlayerNum( ) == 0 ) {
+		return;
+	}
+
+	// 1P, 2P 모두 자기 키는 A, D, W, S (상대 키는 읽지도 보내지도 않음)
+	// 경기 중이 아니면 0으로 보내서, 누른 채 씬이 바뀌어도 서버에 키가 남지 않게 함
+	auto keys = std::uint8_t{ 0 };
+	if ( SceneHandler::getCurrSceneType( ) == SceneType::InGame ) {
+		auto isDown = [ ]( Key key ) {
+			auto state = InputHandler::getKeyState( key );
+			return state == KeyState::Tap || state == KeyState::Hold;
+		};
+
+		if ( isDown( Key::A ) ) keys |= Protocol::KeyLeft;
+		if ( isDown( Key::D ) ) keys |= Protocol::KeyRight;
+		if ( isDown( Key::W ) ) keys |= Protocol::KeyJump;
+		if ( isDown( Key::S ) ) keys |= Protocol::KeyKick;
+	}
+
+	// 바뀔 때만 보냄
+	if ( keys == sentKeys_ ) {
+		return;
+	}
+
+	auto input = Protocol::C2S_Input{ };
+	input.keys = keys;
+	if ( !ClientNetwork::sendPacket( &input, sizeof( input ) ) ) {
+		// 끊긴 연결은 다음 poll에서 처리
+		std::printf( "C2S_Input 전송 실패\n" );
+		return;
+	}
+	sentKeys_ = keys;
 }
 
 void Game::handlePacket( const std::vector<char>& packet ) {
@@ -156,3 +193,5 @@ std::uint16_t Game::clientHeight_;
 
 HDC Game::memDC_;
 HBITMAP Game::memBmp_;
+
+std::uint8_t Game::sentKeys_ = 0;
