@@ -54,6 +54,10 @@ void Timer::startMatch( std::uint16_t time ) {
 	finished_ = time_ == 0;
 }
 
+void Timer::stopMatch( ) {
+	running_ = false;
+}
+
 double Timer::now( ) {
 	LARGE_INTEGER cnt;
 	QueryPerformanceCounter( &cnt );

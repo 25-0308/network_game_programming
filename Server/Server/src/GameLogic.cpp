@@ -62,10 +62,11 @@ void GameLogic::processJob( const Job& job ) {
 }
 
 void GameLogic::onPlayerJoin( std::uint8_t playerNum ) {
-	inputKeys_[ playerNum - 1 ] = 0;
+	characters_[ playerNum - 1 ] = Protocol::Character::America;
 
-	if ( SessionManager::count( ) == Protocol::maxPlayers ) {
+	if ( SessionManager::count( ) == Protocol::maxPlayers && !playing_ ) {
 		std::cout << "2명 접속 완료\n";
+		startMatch( );
 	}
 }
 
@@ -76,9 +77,15 @@ void GameLogic::onPlayerLeave( std::uint8_t playerNum ) {
 	}
 
 	SessionManager::remove( playerNum );
-	inputKeys_[ playerNum - 1 ] = 0;
 	std::cout << "플레이어 " << static_cast<int>( playerNum ) << " 퇴장 ("
 		<< SessionManager::count( ) << "/" << Protocol::maxPlayers << ")\n";
+
+	// 혼자서는 경기를 이어갈 수 없으므로 중단, 다시 2명이 되면 새로 시작
+	if ( playing_ ) {
+		playing_ = false;
+		Timer::stopMatch( );
+		std::cout << "경기 중단\n";
+	}
 
 	// 남은 플레이어에게 알림
 	auto enemyLeft = Protocol::S2C_EnemyLeft{ };
@@ -95,6 +102,11 @@ void GameLogic::onPacket( std::uint8_t playerNum, const char* data, int size ) {
 			break;
 		}
 
+		// 확정한 캐릭터는 다음 경기 시작 때 사용
+		if ( select->confirmed ) {
+			characters_[ playerNum - 1 ] = select->character;
+		}
+
 		// 상대 화면에도 보이도록 두 명 모두에게 전달
 		auto selected = Protocol::S2C_CharacterSelected{ };
 		selected.playerNum = playerNum;
@@ -108,9 +120,10 @@ void GameLogic::onPacket( std::uint8_t playerNum, const char* data, int size ) {
 		if ( input == nullptr ) {
 			break;
 		}
-		inputKeys_[ playerNum - 1 ] = input->keys & Protocol::inputKeyMask;
-		std::cout << "플레이어 " << static_cast<int>( playerNum ) << " 입력: "
-			<< static_cast<int>( inputKeys_[ playerNum - 1 ] ) << "\n";
+		// 경기 중이 아니면 버림 (경기 시작 때 키 상태를 비우고 시작)
+		if ( playing_ ) {
+			match_.applyInput( playerNum, input->keys );
+		}
 		return;
 	}
 	case Protocol::PacketType::C2S_Rematch: {
@@ -128,8 +141,32 @@ void GameLogic::onPacket( std::uint8_t playerNum, const char* data, int size ) {
 		<< static_cast<int>( header->type ) << ", 크기 " << size << ")\n";
 }
 
+void GameLogic::startMatch( ) {
+	// Match::start가 플레이어 초기화와 Timer::startMatch를 함께 함
+	match_.start( characters_[ 0 ], characters_[ 1 ] );
+	scores_.fill( 0 );
+	playing_ = true;
+	ended_ = false;
+	std::cout << "경기 시작\n";
+}
+
 void GameLogic::update( ) {
 	Timer::update( );
+
+	if ( !playing_ ) {
+		return;
+	}
+
+	// 시간이 끝난 틱에는 진행하지 않고 종료
+	if ( Timer::isFinished( ) ) {
+		playing_ = false;
+		ended_ = true;
+		std::cout << "경기 종료 (" << static_cast<int>( scores_[ 0 ] ) << " : "
+			<< static_cast<int>( scores_[ 1 ] ) << ")\n";
+		return;
+	}
+
+	match_.tick( );
 }
 
 void GameLogic::render( ) {
@@ -140,8 +177,34 @@ void GameLogic::render( ) {
 	frame.remainTime = Timer::remainTime( );
 	frame.finished = Timer::isFinished( ) ? 1 : 0;
 	SessionManager::broadcast( &frame, sizeof( frame ) );
+
+	if ( playing_ ) {
+		auto state = Protocol::S2C_GameState{ };
+		for ( auto i = 0; i < Protocol::maxPlayers; ++i ) {
+			state.players[ i ] = match_.player( static_cast<std::uint8_t>( i + 1 ) ).toState( );
+			state.scores[ i ] = scores_[ i ];
+		}
+		state.remainTime = Timer::remainTime( );
+		SessionManager::broadcast( &state, sizeof( state ) );
+	}
+
+	if ( ended_ ) {
+		ended_ = false;
+
+		auto gameEnd = Protocol::S2C_GameEnd{ };
+		for ( auto i = 0; i < Protocol::maxPlayers; ++i ) {
+			gameEnd.scores[ i ] = scores_[ i ];
+		}
+		SessionManager::broadcast( &gameEnd, sizeof( gameEnd ) );
+	}
 }
 
 JobQueue GameLogic::jobQueue_;
 double GameLogic::nextTick_;
-std::array<std::uint8_t, Protocol::maxPlayers> GameLogic::inputKeys_;
+
+Match GameLogic::match_;
+bool GameLogic::playing_ = false;
+bool GameLogic::ended_ = false;
+
+std::array<Protocol::Character, Protocol::maxPlayers> GameLogic::characters_{ };
+std::array<std::uint8_t, Protocol::maxPlayers> GameLogic::scores_{ };

@@ -13,6 +13,10 @@ public:
 
 	// 경기 시작 시 호출한다. 서버 실행 및 접속만으로는 카운트다운하지 않는다.
 	static void startMatch( std::uint16_t time = GameConst::matchTime );
+
+	// 경기 중단 시 호출, 남은 시간은 그대로 멈춤
+	static void stopMatch( );
+
 	static std::uint16_t remainTime( ) {
 		return time_;
 	}

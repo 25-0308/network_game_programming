@@ -3,8 +3,10 @@
 
 #include "common.hpp"
 #include "JobQueue.hpp"
+#include "Match.hpp"
 
-// 게임 전체 흐름: 매 틱 전체 작업큐를 순서대로 실행 -> 시간 갱신 -> 클라에 전송
+// 게임 전체 흐름: 매 틱 전체 작업큐를 순서대로 실행 -> 경기 진행 -> 클라에 전송
+// 경기: 2명 접속 시 시작 -> 시간이 끝나면 종료 (도중에 나가면 중단)
 // 소켓 닫기와 패킷 처리는 여기서만 함 (지금은 메인 스레드, 추후 게임 로직 스레드)
 class GameLogic {
 public:
@@ -29,7 +31,10 @@ private:
 	static void onPlayerLeave( std::uint8_t playerNum );
 	static void onPacket( std::uint8_t playerNum, const char* data, int size );
 
-	// 시간 갱신
+	// 두 캐릭터로 경기 시작
+	static void startMatch( );
+
+	// 시간 갱신, 경기 중이면 한 틱 진행
 	static void update( );
 
 	// 이번 틱 결과를 클라에 전송
@@ -38,8 +43,13 @@ private:
 	static JobQueue jobQueue_;
 	static double nextTick_;
 
-	// 플레이어별 마지막 입력 (C2S_Input::keys)
-	static std::array<std::uint8_t, Protocol::maxPlayers> inputKeys_;
+	static Match match_;
+	static bool playing_;	// 경기 진행 중
+	static bool ended_;		// 이번 틱에 시간이 끝남 (render에서 S2C_GameEnd 전송)
+
+	// 플레이어별 확정한 캐릭터 (C2S_SelectCharacter를 받기 전에는 America)
+	static std::array<Protocol::Character, Protocol::maxPlayers> characters_;
+	static std::array<std::uint8_t, Protocol::maxPlayers> scores_;
 };
 
 #endif	// __game_logic_hpp
