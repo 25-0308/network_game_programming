@@ -13,7 +13,6 @@ bool Player::isRemote( ) const {
 }
 
 void Player::update() {
-    serverAnim_.reset( );
     // 이 클라이언트가 조작하는 Player만 키를 읽음 (상대 Player는 키에 반응하지 않음)
     const bool mine = !isRemote( );
 
@@ -314,7 +313,9 @@ void Player::update( const Protocol::PlayerState& state ) {
     stunT_ = state.stunned ? 1.f : 0.f;
 
     applyServerAnim( state.anim );
-    componentUpdate( );
+
+    // 애니메이션은 S2C_Frame마다 update( )에서 진행하므로 여기서는 충돌 박스만 옮김
+    getCollider( )->update( pos_ );
 }
 
 void Player::applyServerAnim( Protocol::PlayerAnim anim ) {
