@@ -8,10 +8,14 @@
 #include "../include/SoundHandler.hpp"
 #include "../include/ClientNetwork.hpp"
 
+bool Player::isRemote( ) const {
+    return pnum_ != ClientNetwork::getPlayerNum( );
+}
+
 void Player::update() {
     serverAnim_.reset( );
     // 이 클라이언트가 조작하는 Player만 키를 읽음 (상대 Player는 키에 반응하지 않음)
-    const bool mine = pnum_ == ClientNetwork::getPlayerNum( );
+    const bool mine = !isRemote( );
 
     // Esc 씬 전환은 내 Player 하나만 처리해서 이벤트가 두 번 쌓이지 않게 함
     if ( mine && InputHandler::getKeyState( Key::Esc ) == KeyState::Tap
@@ -38,6 +42,13 @@ void Player::update() {
         );
 		return;
 	}
+
+    // 원격 Player 모드: 키 입력, 중력, 대시, 타이머를 계산하지 않음
+    // 위치, HP, 기절, 애니메이션은 S2C_GameState를 받을 때 update( state )에서 적용
+    if ( !mine ) {
+        componentUpdate( );
+        return;
+    }
 
     float dt = Timer::fdt();
 
@@ -77,7 +88,7 @@ void Player::update() {
     }
 
     // 1P, 2P 모두 W 점프, A 왼쪽, D 오른쪽, S 발차기 (C2S_Input으로 보내는 키와 같음)
-    if (pnum_==1 && mine && !isStunned()) {
+    if (pnum_==1 && !isStunned()) {
         if (InputHandler::getKeyState(Key::S) == KeyState::Tap) {
             kick();
         }
@@ -144,7 +155,7 @@ void Player::update() {
         }
     }
 
-    if (pnum_ == 2 && mine && !isStunned()) {
+    if (pnum_ == 2 && !isStunned()) {
         if (InputHandler::getKeyState(Key::S) == KeyState::Tap) {
             kick();
         }
@@ -218,16 +229,18 @@ void Player::update() {
 }
 
 void Player::kick( ) {
-    const float kickCooldownTime = 0.5f;
-
     if ( kickCooldown_ > 0.f ) {
         return;
     }
     kickCooldown_ = kickCooldownTime;
+    startKick( );
+}
+
+void Player::startKick( ) {
     SoundHandler::playEffect( SoundEffect::PlayerKick );
 
     kickAnimT_ = kickFrameCnt * kickFrameTime;
-    getAnimator( )->playFromStart( pnum_ == 1 ? "player_kick_left" : "player_kick_right" );
+    getAnimator( )->playFromStart( kickAnimName( ) );
 
     const float kickRange = 90.f;
     const float kickHitReach = 40.f;
@@ -297,27 +310,45 @@ void Player::takeHit( float damage ) {
 void Player::update( const Protocol::PlayerState& state ) {
     pos_ = PointFloat( state.x, state.y );
     hp_ = static_cast<float>( state.hp );
+    // 남은 기절 시간은 오지 않으므로 기절 여부만 맞춤 (기절이 풀리는 시점도 서버를 따름)
     stunT_ = state.stunned ? 1.f : 0.f;
 
-    if ( !serverAnim_ || *serverAnim_ != state.anim ) {
-        const bool left = pnum_ == 1;
-        switch ( state.anim ) {
-        case Protocol::PlayerAnim::Idle:
-            getAnimator( )->play( idleAnimName( ) );
-            break;
-        case Protocol::PlayerAnim::RunFront:
-            getAnimator( )->play( left ? "player_run_front_left" : "player_run_front_right" );
-            break;
-        case Protocol::PlayerAnim::RunBack:
-            getAnimator( )->play( left ? "player_run_back_left" : "player_run_back_right" );
-            break;
-        case Protocol::PlayerAnim::Kick:
-            getAnimator( )->playFromStart( left ? "player_kick_left" : "player_kick_right" );
-            break;
+    applyServerAnim( state.anim );
+    componentUpdate( );
+}
+
+void Player::applyServerAnim( Protocol::PlayerAnim anim ) {
+    // 서버는 발차기 모션(0.24초)보다 쿨타임(0.5초)이 길어서
+    // 연속 발차기 사이에도 Kick이 아닌 상태가 끼므로 바뀌는 순간 = 발차기 한 번
+    const bool kickStarted = anim == Protocol::PlayerAnim::Kick
+        && serverAnim_ != Protocol::PlayerAnim::Kick;
+    serverAnim_ = anim;
+
+    if ( isRemote( ) ) {
+        // 상대 Player는 서버 애니메이션을 그대로 따름
+        if ( kickStarted ) {
+            // 쿨타임은 서버가 판정했으므로 바로 시작
+            startKick( );
+        }
+        else if ( anim != Protocol::PlayerAnim::Kick ) {
+            kickAnimT_ = 0.f;
+            getAnimator( )->play( moveAnimName( anim ) );
+        }
+        return;
+    }
+
+    // 내 Player는 키를 누른 프레임에 kick( )으로 먼저 모션을 시작함
+    if ( kickStarted ) {
+        // 쿨타임이 남아 있으면 이미 직접 찬 발차기, 없으면 내 쪽에서 놓친 발차기라 지금 시작
+        if ( kickCooldown_ <= 0.f ) {
+            kickCooldown_ = kickCooldownTime;
+            startKick( );
         }
     }
-    serverAnim_ = state.anim;
-    componentUpdate( );
+    else if ( anim != Protocol::PlayerAnim::Kick ) {
+        // 서버 응답이 늦게 와도 먼저 시작한 발차기 모션은 끊지 않음
+        playAnim( moveAnimName( anim ) );
+    }
 }
 
 void Player::render( HDC hdc ) {

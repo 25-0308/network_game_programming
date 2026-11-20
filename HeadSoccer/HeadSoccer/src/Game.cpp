@@ -173,14 +173,23 @@ void Game::applyPlayerStates( const Protocol::S2C_GameState& state ) {
 		return;
 	}
 
-	// players[0]은 1P, players[1]은 2P
-	for ( Object* obj : SceneHandler::getCurrScene( )->getGroup( ObjectType::Player ) ) {
-		auto player = static_cast<Player*>( obj );
-		auto num = player->getPlayerNum( );
-		if ( num < 1 || num > Protocol::maxPlayers ) {
-			continue;
+	// 원격 Player를 먼저 적용: 상대 발차기 이벤트가 내 Player를 맞히더라도
+	// 바로 뒤에 내 Player에 서버 HP가 덮여서 이번 틱 결과와 같아짐
+	auto& players = SceneHandler::getCurrScene( )->getGroup( ObjectType::Player );
+	for ( bool remotePass : { true, false } ) {
+		for ( Object* obj : players ) {
+			auto player = static_cast<Player*>( obj );
+			if ( player->isRemote( ) != remotePass ) {
+				continue;
+			}
+
+			// players[0]은 1P, players[1]은 2P
+			auto num = player->getPlayerNum( );
+			if ( num < 1 || num > Protocol::maxPlayers ) {
+				continue;
+			}
+			player->update( state.players[ num - 1 ] );
 		}
-		player->update( state.players[ num - 1 ] );
 	}
 }
 
