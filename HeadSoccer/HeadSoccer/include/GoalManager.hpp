@@ -1,4 +1,4 @@
-#ifndef __goal_manager_hpp
+﻿#ifndef __goal_manager_hpp
 #define __goal_manager_hpp
 
 #include "Object.hpp"
@@ -11,6 +11,7 @@ public:
 	virtual ~GoalManager( );
 
 	void update( ) override;
+	void update( int p1Score, int p2Score, int scorer, bool celebrating );
 	void render( HDC hdc ) override;
 
 private:

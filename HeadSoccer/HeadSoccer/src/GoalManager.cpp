@@ -88,6 +88,24 @@ void GoalManager::update( ) {
 	}
 }
 
+void GoalManager::update( int p1Score, int p2Score, int scorer, bool celebrating ) {
+	if ( p1Score < 0 || p2Score < 0 || ( celebrating && scorer != 1 && scorer != 2 ) ) {
+		return;
+	}
+	const bool newGoal = celebrating && ( !celebrating_ || lastScorer_ != scorer
+		|| p1GoalScore != p1Score || p2GoalScore != p2Score );
+
+	p1GoalScore = p1Score;
+	p2GoalScore = p2Score;
+	lastScorer_ = scorer;
+	celebrating_ = celebrating;
+
+	if ( newGoal ) {
+		celebrateT_ = 0.f;
+		SoundHandler::playEffect( SoundEffect::Goal );
+	}
+}
+
 void GoalManager::scoreGoal( int scorer ) {
 	if ( scorer == 1 ) {
 		++p1GoalScore;
