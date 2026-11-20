@@ -108,6 +108,10 @@ public:
 	float getHp( ) const {
 		return hp_;
 	}
+	// 1 = left (1P), 2 = right (2P), S2C_GameState::players[ num - 1 ]
+	int getPlayerNum( ) const {
+		return pnum_;
+	}
 
 	static constexpr float maxHp = 100.f;
 
