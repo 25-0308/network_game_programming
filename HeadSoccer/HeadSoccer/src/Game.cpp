@@ -7,6 +7,7 @@
 #include "../include/ResourceHandler.hpp"
 #include "../include/CollisionHandler.hpp"
 #include "../include/SoundHandler.hpp"
+#include "../include/Player.hpp"
 
 #include <cstdio>
 
@@ -60,7 +61,8 @@ void Game::start( ) {
 		return;
 	}
 
-	// 받은 패킷을 순서대로 처리 (S2C_Frame마다 한 프레임 갱신)
+	// 처리 지점: 렌더 전에 받은 패킷을 순서대로 처리
+	// (S2C_Frame마다 한 프레임 갱신, S2C_GameState는 Player에 서버 상태 적용)
 	auto packet = std::vector<char>( );
 	while ( ClientNetwork::popPacket( packet ) ) {
 		handlePacket( packet );
@@ -90,11 +92,48 @@ void Game::release( ) {
 
 void Game::step( ) {
 	InputHandler::update( );
+	sendInput( );
 
 	SceneHandler::update( );
 	CollisionHandler::update( );
 
 	EventHandler::update( );
+}
+
+void Game::sendInput( ) {
+	// 자리를 배정받기 전에는 보낼 대상이 없음
+	if ( ClientNetwork::getPlayerNum( ) == 0 ) {
+		return;
+	}
+
+	// 1P, 2P 모두 자기 키는 A, D, W, S (상대 키는 읽지도 보내지도 않음)
+	// 경기 중이 아니면 0으로 보내서, 누른 채 씬이 바뀌어도 서버에 키가 남지 않게 함
+	auto keys = std::uint8_t{ 0 };
+	if ( SceneHandler::getCurrSceneType( ) == SceneType::InGame ) {
+		auto isDown = [ ]( Key key ) {
+			auto state = InputHandler::getKeyState( key );
+			return state == KeyState::Tap || state == KeyState::Hold;
+		};
+
+		if ( isDown( Key::A ) ) keys |= Protocol::KeyLeft;
+		if ( isDown( Key::D ) ) keys |= Protocol::KeyRight;
+		if ( isDown( Key::W ) ) keys |= Protocol::KeyJump;
+		if ( isDown( Key::S ) ) keys |= Protocol::KeyKick;
+	}
+
+	// 바뀔 때만 보냄
+	if ( keys == sentKeys_ ) {
+		return;
+	}
+
+	auto input = Protocol::C2S_Input{ };
+	input.keys = keys;
+	if ( !ClientNetwork::sendPacket( &input, sizeof( input ) ) ) {
+		// 끊긴 연결은 다음 poll에서 처리
+		std::printf( "C2S_Input 전송 실패\n" );
+		return;
+	}
+	sentKeys_ = keys;
 }
 
 void Game::handlePacket( const std::vector<char>& packet ) {
@@ -116,9 +155,32 @@ void Game::handlePacket( const std::vector<char>& packet ) {
 		}
 		break;
 	}
+	case Protocol::PacketType::S2C_GameState: {
+		if ( packet.size( ) == sizeof( Protocol::S2C_GameState ) ) {
+			applyPlayerStates( *reinterpret_cast<const Protocol::S2C_GameState*>( packet.data( ) ) );
+		}
+		break;
+	}
 	default:
 		// 나머지 패킷은 이후 일정에서 처리
 		break;
+	}
+}
+
+void Game::applyPlayerStates( const Protocol::S2C_GameState& state ) {
+	// 경기 중이 아니면 Player 오브젝트가 없음
+	if ( SceneHandler::getCurrSceneType( ) != SceneType::InGame ) {
+		return;
+	}
+
+	// players[0]은 1P, players[1]은 2P
+	for ( Object* obj : SceneHandler::getCurrScene( )->getGroup( ObjectType::Player ) ) {
+		auto player = static_cast<Player*>( obj );
+		auto num = player->getPlayerNum( );
+		if ( num < 1 || num > Protocol::maxPlayers ) {
+			continue;
+		}
+		player->update( state.players[ num - 1 ] );
 	}
 }
 
@@ -131,3 +193,5 @@ std::uint16_t Game::clientHeight_;
 
 HDC Game::memDC_;
 HBITMAP Game::memBmp_;
+
+std::uint8_t Game::sentKeys_ = 0;

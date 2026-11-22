@@ -42,21 +42,34 @@ bool Network::listen( std::uint16_t port ) {
 	return true;
 }
 
-bool Network::waitAccept( double seconds ) {
+void Network::waitReadable( double seconds, const std::array<SOCKET, Protocol::maxPlayers>& socks,
+	bool& listenReady, std::array<bool, Protocol::maxPlayers>& ready ) {
+	listenReady = false;
+	ready.fill( false );
+
 	fd_set readSet;
 	FD_ZERO( &readSet );
 	FD_SET( listenSock_, &readSet );
+	for ( auto sock : socks ) {
+		if ( sock != INVALID_SOCKET ) {
+			FD_SET( sock, &readSet );
+		}
+	}
 
 	auto micro = static_cast<long>( seconds * 1'000'000.0 );
 	auto timeout = timeval{ micro / 1'000'000, micro % 1'000'000 };
 
-	// 리슨 소켓이 읽기 가능하면 접속 요청이 있음
+	// 리슨 소켓이 읽기 가능하면 접속 요청, 플레이어 소켓이면 받을 데이터(또는 접속 종료)가 있음
 	int ret = select( 0, &readSet, nullptr, nullptr, &timeout );
 	if ( ret == SOCKET_ERROR ) {
 		printError( "select" );
-		return false;
+		return;
 	}
-	return ret > 0;
+
+	listenReady = FD_ISSET( listenSock_, &readSet ) != 0;
+	for ( auto i = 0; i < Protocol::maxPlayers; ++i ) {
+		ready[ i ] = socks[ i ] != INVALID_SOCKET && FD_ISSET( socks[ i ], &readSet ) != 0;
+	}
 }
 
 SOCKET Network::accept( ) {

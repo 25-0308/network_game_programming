@@ -88,6 +88,9 @@
     <ClInclude Include="include\AABB.hpp" />
     <ClInclude Include="include\common.hpp" />
     <ClInclude Include="include\Ball.hpp" />
+    <ClInclude Include="include\GameLogic.hpp" />
+    <ClInclude Include="include\Job.hpp" />
+    <ClInclude Include="include\JobQueue.hpp" />
     <ClInclude Include="include\Match.hpp" />
     <ClInclude Include="include\Network.hpp" />
     <ClInclude Include="include\Player.hpp" />
@@ -99,10 +102,13 @@
   <ItemGroup>
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Ball.cpp" />
+    <ClCompile Include="src\GameLogic.cpp" />
+    <ClCompile Include="src\JobQueue.cpp" />
     <ClCompile Include="src\Match.cpp" />
     <ClCompile Include="src\Network.cpp" />
     <ClCompile Include="src\Player.cpp" />
     <ClCompile Include="src\SessionManager.cpp" />
+    <ClCompile Include="src\Threads.cpp" />
     <ClCompile Include="src\Timer.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

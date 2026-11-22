@@ -1,13 +1,17 @@
 ﻿#include "../include/common.hpp"
 #include "../include/Network.hpp"
 #include "../include/SessionManager.hpp"
-#include "../include/Timer.hpp"
+#include "../include/GameLogic.hpp"
+#include "../include/Threads.hpp"
 
 #include <timeapi.h>
 #pragma comment( lib, "winmm" )
 
 namespace {
-	// 새 접속 처리: 자리 배정, S2C_Login 전송
+	// 끊김을 작업큐에 넣은 자리, 처리될 때까지 같은 소켓을 다시 읽지 않음
+	std::array<bool, Protocol::maxPlayers> stopped{ };
+
+	// 새 접속 처리: 자리 배정, S2C_Login 전송 후 PlayerJoin을 작업큐에 넣음
 	void acceptClient( ) {
 		auto sock = Network::accept( );
 		if ( sock == INVALID_SOCKET ) {
@@ -33,22 +37,38 @@ namespace {
 		std::cout << "플레이어 " << static_cast<int>( playerNum ) << " 입장 ("
 			<< SessionManager::count( ) << "/" << Protocol::maxPlayers << ")\n";
 
-		if ( SessionManager::count( ) == Protocol::maxPlayers ) {
-			std::cout << "2명 접속 완료\n";
-		}
+		stopped[ playerNum - 1 ] = false;
+
+		auto job = Job{ };
+		job.type = JobType::PlayerJoin;
+		job.playerNum = playerNum;
+		GameLogic::pushJob( job );
 	}
 
-	// 한 프레임 진행 후 클라에 프레임 정보 전송
-	void tick( ) {
-		Timer::update( );
+	// 최대 seconds 동안 접속과 수신을 받아 작업큐에 넣음
+	// 수신 스레드가 생기면 플레이어 수신은 player_1_thread, player_2_thread가 대신함
+	void receive( double seconds ) {
+		auto socks = std::array<SOCKET, Protocol::maxPlayers>{ };
+		for ( auto i = 0; i < Protocol::maxPlayers; ++i ) {
+			auto playerNum = static_cast<std::uint8_t>( i + 1 );
+			bool reading = SessionManager::isConnected( playerNum ) && !stopped[ i ];
+			socks[ i ] = reading ? SessionManager::getSocket( playerNum ) : INVALID_SOCKET;
+		}
 
-		auto frame = Protocol::S2C_Frame{ };
-		frame.frame = Timer::frame( );
-		frame.dt = Timer::fdt( );
-		frame.fps = Timer::fps( );
-		frame.remainTime = Timer::remainTime( );
-		frame.finished = Timer::isFinished( ) ? 1 : 0;
-		SessionManager::broadcast( &frame, sizeof( frame ) );
+		bool listenReady = false;
+		auto ready = std::array<bool, Protocol::maxPlayers>{ };
+		Network::waitReadable( seconds, socks, listenReady, ready );
+
+		// 데이터가 온 뒤에 읽으므로 패킷 하나를 다 받을 때까지만 잠깐 막힘
+		for ( auto i = 0; i < Protocol::maxPlayers; ++i ) {
+			if ( ready[ i ] && !receivePlayerPacket( static_cast<std::uint8_t>( i + 1 ) ) ) {
+				stopped[ i ] = true;
+			}
+		}
+
+		if ( listenReady ) {
+			acceptClient( );
+		}
 	}
 }
 
@@ -71,27 +91,16 @@ int main( ) {
 	std::cout << "서버 시작 (포트 " << Protocol::serverPort << ", " << GameConst::tickRate << " FPS)\n";
 	std::cout << "클라이언트 접속 대기\n";
 
-	const double tickTime = 1.0 / GameConst::tickRate;
-	Timer::init( );
-	double nextTick = tickTime;
+	GameLogic::init( );
 
-	// 다음 틱까지 남은 시간 동안 접속을 기다리고, 시간이 되면 프레임 진행
+	// 다음 틱까지는 접속과 수신을 받아 작업큐에 쌓고, 시간이 되면 작업큐 실행 후 프레임 진행
 	while ( true ) {
-		double remain = nextTick - Timer::now( );
+		auto remain = GameLogic::timeUntilNextTick( );
 		if ( remain > 0.0 ) {
-			if ( Network::waitAccept( remain ) ) {
-				acceptClient( );
-			}
+			receive( remain );
 			continue;
 		}
-
-		tick( );
-
-		// 정해진 간격으로 예약해서 평균 GameConst::tickRate 유지, 많이 밀리면 지금부터 다시 시작
-		nextTick += tickTime;
-		if ( Timer::now( ) - nextTick > 0.25 ) {
-			nextTick = Timer::now( ) + tickTime;
-		}
+		GameLogic::tick( );
 	}
 
 	Network::release( );
