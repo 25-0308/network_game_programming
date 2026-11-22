@@ -11,6 +11,7 @@ public:
 	virtual ~Button( ) {}
 
 	void update( ) override;
+	void update( bool selected );
 	void render( HDC hdc ) override;
 
 	bool mouseOnCheck( );
