@@ -26,6 +26,7 @@ public:
     virtual ~ImageStorage() = default;
 
     void update() override;
+    void update(std::int32_t index);
     void render(HDC hdc) override;
 
     void addImage(const std::string& key, Image* image) {

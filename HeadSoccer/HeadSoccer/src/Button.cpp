@@ -53,6 +53,15 @@ void Button::update( ) {
 	componentUpdate( );
 }
 
+void Button::update( bool selected ) {
+	resetImageState( );
+	if ( selected ) {
+		imageOff_ = imageOn_;
+	}
+
+	update( );
+}
+
 void Button::render( HDC hdc ) {
 	auto relativePos = pos_ - Camera::getPos( );
 

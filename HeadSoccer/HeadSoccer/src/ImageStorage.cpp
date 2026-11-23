@@ -53,6 +53,15 @@ void ImageStorage::update() {
     componentUpdate();
 }
 
+void ImageStorage::update(std::int32_t index) {
+    setIndex(index);
+    setFlagIndex(index);
+    setStatIndex(index);
+    allstatindex = (statIndex_ + 4) % 4;
+
+    componentUpdate();
+}
+
 void ImageStorage::render(HDC hdc) {
     // Ä³¸¯ÅÍ ÀÌ¹ÌÁö ·»´õ¸µ
     auto images = std::vector<Image*>(images_.size());
@@ -79,9 +88,9 @@ void ImageStorage::render(HDC hdc) {
 	auto statimage = ResourceHandler::findImage("stat_color.png"); // ½ºÅÈ UI ·»´õ¸µ
 	if (statimage) {
 		auto statPos = statpos_ - Camera::getPos();                            
-        statimage->draw(hdc, statPos, statData[index_].speedstat, -30);
-		statimage->draw(hdc, statPos, statData[index_].kickstat, -1);
-		statimage->draw(hdc, statPos, statData[index_].jumpstat, 27);
+        statimage->draw(hdc, statPos, statData[statIndex_].speedstat, -30);
+		statimage->draw(hdc, statPos, statData[statIndex_].kickstat, -1);
+		statimage->draw(hdc, statPos, statData[statIndex_].jumpstat, 27);
 	}
     
     componentRender(hdc); // Animator³ª Collider ·»´õ¸µ
