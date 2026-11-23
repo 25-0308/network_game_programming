@@ -2,8 +2,12 @@
 #include "../include/SessionManager.hpp"
 #include "../include/Timer.hpp"
 
+#include <random>
+
 namespace {
 	constexpr double tickTime = 1.0 / GameConst::tickRate;
+
+	std::mt19937 rng;
 
 	// 크기가 맞으면 패킷 구조체로 봄, 아니면 nullptr
 	template<class Packet>
@@ -18,6 +22,7 @@ namespace {
 void GameLogic::init( ) {
 	Timer::init( );
 	nextTick_ = tickTime;
+	rng.seed( std::random_device{ }( ) );
 }
 
 void GameLogic::pushJob( const Job& job ) {
@@ -63,10 +68,21 @@ void GameLogic::processJob( const Job& job ) {
 
 void GameLogic::onPlayerJoin( std::uint8_t playerNum ) {
 	characters_[ playerNum - 1 ] = Protocol::Character::America;
+	ready_[ playerNum - 1 ] = false;
 
-	if ( SessionManager::count( ) == Protocol::maxPlayers && !playing_ ) {
-		std::cout << "2명 접속 완료\n";
-		startMatch( );
+	if ( SessionManager::count( ) < Protocol::maxPlayers ) {
+		std::cout << "상대 접속 대기\n";
+		return;
+	}
+
+	// 2명이 모이면 캐릭터 선택, 서로의 현재 선택을 알려 줌
+	phase_ = Phase::Select;
+	std::cout << "2명 접속 완료, 캐릭터 선택\n";
+
+	auto changeScene = Protocol::S2C_ChangeScene{ };
+	SessionManager::broadcast( &changeScene, sizeof( changeScene ) );
+	for ( std::uint8_t num = 1; num <= Protocol::maxPlayers; ++num ) {
+		sendSelection( num );
 	}
 }
 
@@ -80,16 +96,22 @@ void GameLogic::onPlayerLeave( std::uint8_t playerNum ) {
 	std::cout << "플레이어 " << static_cast<int>( playerNum ) << " 퇴장 ("
 		<< SessionManager::count( ) << "/" << Protocol::maxPlayers << ")\n";
 
-	// 혼자서는 경기를 이어갈 수 없으므로 중단, 다시 2명이 되면 새로 시작
-	if ( playing_ ) {
-		playing_ = false;
+	// 혼자서는 이어갈 수 없으므로 경기, 카운트다운을 멈추고 대기로
+	if ( phase_ == Phase::Playing ) {
 		Timer::stopMatch( );
 		std::cout << "경기 중단\n";
 	}
+	phase_ = Phase::Waiting;
+	ready_.fill( false );
 
-	// 남은 플레이어에게 알림
+	// 남은 플레이어에게 알림 (준비도 풀림)
 	auto enemyLeft = Protocol::S2C_EnemyLeft{ };
 	SessionManager::broadcast( &enemyLeft, sizeof( enemyLeft ) );
+	for ( std::uint8_t num = 1; num <= Protocol::maxPlayers; ++num ) {
+		if ( SessionManager::isConnected( num ) ) {
+			sendSelection( num );
+		}
+	}
 }
 
 void GameLogic::onPacket( std::uint8_t playerNum, const char* data, int size ) {
@@ -101,18 +123,7 @@ void GameLogic::onPacket( std::uint8_t playerNum, const char* data, int size ) {
 		if ( select == nullptr || static_cast<std::size_t>( select->character ) >= GameConst::characterStats.size( ) ) {
 			break;
 		}
-
-		// 확정한 캐릭터는 다음 경기 시작 때 사용
-		if ( select->confirmed ) {
-			characters_[ playerNum - 1 ] = select->character;
-		}
-
-		// 상대 화면에도 보이도록 두 명 모두에게 전달
-		auto selected = Protocol::S2C_CharacterSelected{ };
-		selected.playerNum = playerNum;
-		selected.character = select->character;
-		selected.confirmed = select->confirmed;
-		SessionManager::broadcast( &selected, sizeof( selected ) );
+		onSelectCharacter( playerNum, *select );
 		return;
 	}
 	case Protocol::PacketType::C2S_Input: {
@@ -121,7 +132,7 @@ void GameLogic::onPacket( std::uint8_t playerNum, const char* data, int size ) {
 			break;
 		}
 		// 경기 중이 아니면 버림 (경기 시작 때 키 상태를 비우고 시작)
-		if ( playing_ ) {
+		if ( phase_ == Phase::Playing ) {
 			match_.applyInput( playerNum, input->keys );
 		}
 		return;
@@ -130,6 +141,7 @@ void GameLogic::onPacket( std::uint8_t playerNum, const char* data, int size ) {
 		if ( asPacket<Protocol::C2S_Rematch>( data, size ) == nullptr ) {
 			break;
 		}
+		// 경기가 끝나면 선택 단계로 돌아가므로, 다시 준비하면 재경기
 		std::cout << "플레이어 " << static_cast<int>( playerNum ) << " 재시작 요청\n";
 		return;
 	}
@@ -141,32 +153,87 @@ void GameLogic::onPacket( std::uint8_t playerNum, const char* data, int size ) {
 		<< static_cast<int>( header->type ) << ", 크기 " << size << ")\n";
 }
 
+void GameLogic::onSelectCharacter( std::uint8_t playerNum, const Protocol::C2S_SelectCharacter& select ) {
+	// 경기 중에는 바꿀 수 없음
+	if ( phase_ == Phase::Playing ) {
+		return;
+	}
+
+	auto i = playerNum - 1;
+	bool ready = select.confirmed != 0;
+	bool changed = characters_[ i ] != select.character || ready_[ i ] != ready;
+	characters_[ i ] = select.character;
+	ready_[ i ] = ready;
+
+	if ( !changed ) {
+		return;
+	}
+	sendSelection( playerNum );
+
+	// 카운트다운 중에 취소하거나 바꾸면 다시 선택 단계로
+	if ( phase_ == Phase::Countdown ) {
+		phase_ = Phase::Select;
+		std::cout << "카운트다운 취소\n";
+	}
+	tryStartCountdown( );
+}
+
+void GameLogic::tryStartCountdown( ) {
+	if ( phase_ != Phase::Select || !ready_[ 0 ] || !ready_[ 1 ] ) {
+		return;
+	}
+	phase_ = Phase::Countdown;
+	countdownT_ = GameConst::startCountdown;
+	std::cout << "둘 다 준비, " << GameConst::startCountdown << "초 뒤 시작\n";
+}
+
+void GameLogic::sendSelection( std::uint8_t playerNum ) {
+	auto selected = Protocol::S2C_CharacterSelected{ };
+	selected.playerNum = playerNum;
+	selected.character = characters_[ playerNum - 1 ];
+	selected.confirmed = ready_[ playerNum - 1 ] ? 1 : 0;
+	SessionManager::broadcast( &selected, sizeof( selected ) );
+}
+
 void GameLogic::startMatch( ) {
+	auto stageDist = std::uniform_int_distribution<int>( 1, GameConst::stageCount );
+	stage_ = static_cast<std::uint8_t>( stageDist( rng ) );
+
 	// Match::start가 플레이어 초기화와 Timer::startMatch를 함께 함
 	match_.start( characters_[ 0 ], characters_[ 1 ] );
 	scores_.fill( 0 );
-	playing_ = true;
-	ended_ = false;
-	std::cout << "경기 시작\n";
+	phase_ = Phase::Playing;
+	started_ = true;
+	std::cout << "경기 시작 (스테이지 " << static_cast<int>( stage_ ) << ")\n";
 }
 
 void GameLogic::update( ) {
 	Timer::update( );
 
-	if ( !playing_ ) {
-		return;
-	}
+	switch ( phase_ ) {
+	case Phase::Countdown:
+		countdownT_ -= Timer::fdt( );
+		if ( countdownT_ <= 0.f ) {
+			startMatch( );
+		}
+		break;
 
-	// 시간이 끝난 틱에는 진행하지 않고 종료
-	if ( Timer::isFinished( ) ) {
-		playing_ = false;
-		ended_ = true;
-		std::cout << "경기 종료 (" << static_cast<int>( scores_[ 0 ] ) << " : "
-			<< static_cast<int>( scores_[ 1 ] ) << ")\n";
-		return;
-	}
+	case Phase::Playing:
+		// 시간이 끝난 틱에는 진행하지 않고 종료, 다시 준비하면 재경기
+		if ( Timer::isFinished( ) ) {
+			phase_ = Phase::Select;
+			ready_.fill( false );
+			ended_ = true;
+			std::cout << "경기 종료 (" << static_cast<int>( scores_[ 0 ] ) << " : "
+				<< static_cast<int>( scores_[ 1 ] ) << ")\n";
+			break;
+		}
+		match_.tick( );
+		break;
 
-	match_.tick( );
+	default:
+		break;
+	}
 }
 
 void GameLogic::render( ) {
@@ -178,7 +245,18 @@ void GameLogic::render( ) {
 	frame.finished = Timer::isFinished( ) ? 1 : 0;
 	SessionManager::broadcast( &frame, sizeof( frame ) );
 
-	if ( playing_ ) {
+	// 경기 시작은 첫 상태보다 먼저 보냄
+	if ( started_ ) {
+		started_ = false;
+
+		auto gameStart = Protocol::S2C_GameStart{ };
+		gameStart.stage = stage_;
+		gameStart.p1Character = characters_[ 0 ];
+		gameStart.p2Character = characters_[ 1 ];
+		SessionManager::broadcast( &gameStart, sizeof( gameStart ) );
+	}
+
+	if ( phase_ == Phase::Playing ) {
 		auto state = Protocol::S2C_GameState{ };
 		for ( auto i = 0; i < Protocol::maxPlayers; ++i ) {
 			state.players[ i ] = match_.player( static_cast<std::uint8_t>( i + 1 ) ).toState( );
@@ -188,6 +266,7 @@ void GameLogic::render( ) {
 		SessionManager::broadcast( &state, sizeof( state ) );
 	}
 
+	// 종료 후 준비가 풀린 것도 같이 알림
 	if ( ended_ ) {
 		ended_ = false;
 
@@ -196,15 +275,23 @@ void GameLogic::render( ) {
 			gameEnd.scores[ i ] = scores_[ i ];
 		}
 		SessionManager::broadcast( &gameEnd, sizeof( gameEnd ) );
+		for ( std::uint8_t num = 1; num <= Protocol::maxPlayers; ++num ) {
+			sendSelection( num );
+		}
 	}
 }
 
 JobQueue GameLogic::jobQueue_;
 double GameLogic::nextTick_;
 
+Phase GameLogic::phase_ = Phase::Waiting;
+float GameLogic::countdownT_ = 0.f;
+
 Match GameLogic::match_;
-bool GameLogic::playing_ = false;
+std::uint8_t GameLogic::stage_ = 1;
+bool GameLogic::started_ = false;
 bool GameLogic::ended_ = false;
 
 std::array<Protocol::Character, Protocol::maxPlayers> GameLogic::characters_{ };
+std::array<bool, Protocol::maxPlayers> GameLogic::ready_{ };
 std::array<std::uint8_t, Protocol::maxPlayers> GameLogic::scores_{ };

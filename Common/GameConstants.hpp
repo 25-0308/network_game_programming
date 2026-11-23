@@ -26,6 +26,7 @@ namespace GameConst {
 	constexpr std::uint16_t matchTime = 120;	// 경기 시간 (2분)
 	constexpr float goalScreenTime = 3.f;		// 골 화면 후 킥오프까지
 	constexpr std::uint8_t stageCount = 4;		// 경기장 1 ~ 4
+	constexpr float startCountdown = 3.f;		// 둘 다 준비 후 경기 시작까지
 
 	// ---------------- 서버 틱 ----------------
 

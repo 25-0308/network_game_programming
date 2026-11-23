@@ -5,8 +5,16 @@
 #include "JobQueue.hpp"
 #include "Match.hpp"
 
-// 게임 전체 흐름: 매 틱 전체 작업큐를 순서대로 실행 -> 경기 진행 -> 클라에 전송
-// 경기: 2명 접속 시 시작 -> 시간이 끝나면 종료 (도중에 나가면 중단)
+// 게임 진행 단계
+enum class Phase : std::uint8_t {
+	Waiting,	// 상대 접속 대기 (1명)
+	Select,		// 2명 접속, 캐릭터 선택과 준비
+	Countdown,	// 둘 다 준비, startCountdown초 뒤 경기 시작
+	Playing,	// 경기 중
+};
+
+// 게임 전체 흐름: 매 틱 전체 작업큐를 순서대로 실행 -> 단계 진행 -> 클라에 전송
+// 대기 -> 선택 -> 카운트다운 -> 경기 -> (시간 종료) 선택, 도중에 나가면 대기로
 // 소켓 닫기와 패킷 처리는 여기서만 함 (지금은 메인 스레드, 추후 게임 로직 스레드)
 class GameLogic {
 public:
@@ -31,10 +39,19 @@ private:
 	static void onPlayerLeave( std::uint8_t playerNum );
 	static void onPacket( std::uint8_t playerNum, const char* data, int size );
 
-	// 두 캐릭터로 경기 시작
+	// 캐릭터 변경, 준비, 준비 취소
+	static void onSelectCharacter( std::uint8_t playerNum, const Protocol::C2S_SelectCharacter& select );
+
+	// 둘 다 준비했으면 카운트다운 시작
+	static void tryStartCountdown( );
+
+	// 한 플레이어의 캐릭터와 준비 상태를 두 명 모두에게 알림
+	static void sendSelection( std::uint8_t playerNum );
+
+	// 랜덤 스테이지와 두 캐릭터로 경기 시작
 	static void startMatch( );
 
-	// 시간 갱신, 경기 중이면 한 틱 진행
+	// 시간 갱신, 단계별 진행 (카운트다운, 경기 한 틱)
 	static void update( );
 
 	// 이번 틱 결과를 클라에 전송
@@ -43,12 +60,17 @@ private:
 	static JobQueue jobQueue_;
 	static double nextTick_;
 
-	static Match match_;
-	static bool playing_;	// 경기 진행 중
-	static bool ended_;		// 이번 틱에 시간이 끝남 (render에서 S2C_GameEnd 전송)
+	static Phase phase_;
+	static float countdownT_;	// 경기 시작까지 남은 시간
 
-	// 플레이어별 확정한 캐릭터 (C2S_SelectCharacter를 받기 전에는 America)
+	static Match match_;
+	static std::uint8_t stage_;	// 1 ~ stageCount
+	static bool started_;		// 이번 틱에 경기 시작 (render에서 S2C_GameStart 전송)
+	static bool ended_;			// 이번 틱에 시간이 끝남 (render에서 S2C_GameEnd 전송)
+
+	// 플레이어별 선택 중인 캐릭터와 준비 상태
 	static std::array<Protocol::Character, Protocol::maxPlayers> characters_;
+	static std::array<bool, Protocol::maxPlayers> ready_;
 	static std::array<std::uint8_t, Protocol::maxPlayers> scores_;
 };
 
