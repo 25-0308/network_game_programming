@@ -42,36 +42,6 @@ bool Network::listen( std::uint16_t port ) {
 	return true;
 }
 
-void Network::waitReadable( double seconds, const std::array<SOCKET, Protocol::maxPlayers>& socks,
-	bool& listenReady, std::array<bool, Protocol::maxPlayers>& ready ) {
-	listenReady = false;
-	ready.fill( false );
-
-	fd_set readSet;
-	FD_ZERO( &readSet );
-	FD_SET( listenSock_, &readSet );
-	for ( auto sock : socks ) {
-		if ( sock != INVALID_SOCKET ) {
-			FD_SET( sock, &readSet );
-		}
-	}
-
-	auto micro = static_cast<long>( seconds * 1'000'000.0 );
-	auto timeout = timeval{ micro / 1'000'000, micro % 1'000'000 };
-
-	// 리슨 소켓이 읽기 가능하면 접속 요청, 플레이어 소켓이면 받을 데이터(또는 접속 종료)가 있음
-	int ret = select( 0, &readSet, nullptr, nullptr, &timeout );
-	if ( ret == SOCKET_ERROR ) {
-		printError( "select" );
-		return;
-	}
-
-	listenReady = FD_ISSET( listenSock_, &readSet ) != 0;
-	for ( auto i = 0; i < Protocol::maxPlayers; ++i ) {
-		ready[ i ] = socks[ i ] != INVALID_SOCKET && FD_ISSET( socks[ i ], &readSet ) != 0;
-	}
-}
-
 SOCKET Network::accept( ) {
 	auto addr = sockaddr_in{ };
 	int addrLen = sizeof( addr );
@@ -85,6 +55,10 @@ SOCKET Network::accept( ) {
 	// 작은 패킷을 자주 보내므로 Nagle 끄기
 	BOOL noDelay = TRUE;
 	setsockopt( sock, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<const char*>( &noDelay ), sizeof( noDelay ) );
+
+	// 읽지 않는 클라 때문에 send가 계속 막혀 게임 로직 스레드가 멈추지 않도록
+	DWORD sendTimeout = sendTimeoutMs;
+	setsockopt( sock, SOL_SOCKET, SO_SNDTIMEO, reinterpret_cast<const char*>( &sendTimeout ), sizeof( sendTimeout ) );
 
 	char ip[ INET_ADDRSTRLEN ]{ };
 	inet_ntop( AF_INET, &addr.sin_addr, ip, sizeof( ip ) );

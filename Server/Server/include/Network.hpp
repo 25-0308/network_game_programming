@@ -12,12 +12,7 @@ public:
 	// socket, bind, listen
 	static bool listen( std::uint16_t port );
 
-	// 최대 seconds 동안 새 접속이나 플레이어 데이터를 기다림 (수신 스레드 전환 전까지 사용)
-	// listenReady: 접속 요청 있음, ready[i]: socks[i]에 받을 데이터 있음 (INVALID_SOCKET은 건너뜀)
-	static void waitReadable( double seconds, const std::array<SOCKET, Protocol::maxPlayers>& socks,
-		bool& listenReady, std::array<bool, Protocol::maxPlayers>& ready );
-
-	// 접속 대기, 실패 시 INVALID_SOCKET
+	// 접속이 올 때까지 기다림 (블로킹), 실패 시 INVALID_SOCKET
 	static SOCKET accept( );
 
 	// 패킷 전체를 보냄, 실패 시 false

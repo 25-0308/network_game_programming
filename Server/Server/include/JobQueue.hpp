@@ -5,20 +5,26 @@
 
 #include <queue>
 
-// 넣은 순서대로 꺼내는 작업큐
-// 지금은 메인 스레드 하나만 접근하므로 락 없음 (멀티스레드 전환 시 추가)
+// 플레이어별 작업큐 (플레이어 스레드가 넣고, 게임 로직 스레드가 가져감)
+// 두 스레드가 같이 쓰므로 넣고 가져갈 때 락을 잡음
 class JobQueue {
 public:
+	JobQueue( );
+	~JobQueue( );
+
+	JobQueue( const JobQueue& ) = delete;
+	JobQueue& operator=( const JobQueue& ) = delete;
+
 	void push( const Job& job );
 
-	// 맨 앞 작업을 꺼냄, 비었으면 false
-	bool pop( Job& job );
+	// 쌓인 개수가 limit보다 적을 때만 넣음, 꽉 찼으면 false
+	bool tryPush( const Job& job, std::size_t limit );
 
-	bool empty( ) const {
-		return jobs_.empty( );
-	}
+	// 쌓인 작업을 out으로 통째로 옮기고 비움 (락은 맞바꾸는 동안만 잡음)
+	void takeAll( std::queue<Job>& out );
 
 private:
+	CRITICAL_SECTION lock_;
 	std::queue<Job> jobs_;
 };
 

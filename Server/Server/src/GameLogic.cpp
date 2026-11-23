@@ -25,8 +25,13 @@ void GameLogic::init( ) {
 	rng.seed( std::random_device{ }( ) );
 }
 
-void GameLogic::pushJob( const Job& job ) {
-	jobQueue_.push( job );
+bool GameLogic::pushJob( const Job& job ) {
+	auto& queue = playerQueues_[ job.playerNum - 1 ];
+	if ( job.type == JobType::Packet ) {
+		return queue.tryPush( job, maxQueuedJobs );
+	}
+	queue.push( job );
+	return true;
 }
 
 double GameLogic::timeUntilNextTick( ) {
@@ -46,9 +51,21 @@ void GameLogic::tick( ) {
 }
 
 void GameLogic::processJobs( ) {
-	auto job = Job{ };
-	while ( jobQueue_.pop( job ) ) {
-		processJob( job );
+	// 지난 틱에 전송이 실패한 플레이어는 게임에서 먼저 뺌 (자리는 PlayerLeave에서 정리)
+	for ( std::uint8_t num = 1; num <= Protocol::maxPlayers; ++num ) {
+		if ( SessionManager::takeDropped( num ) ) {
+			dropPlayer( num );
+		}
+	}
+
+	// 한 번에 플레이어 큐 락 하나만 잡음 (1P -> 2P)
+	for ( auto& queue : playerQueues_ ) {
+		queue.takeAll( jobs_ );
+	}
+
+	while ( !jobs_.empty( ) ) {
+		processJob( jobs_.front( ) );
+		jobs_.pop( );
 	}
 }
 
@@ -67,10 +84,13 @@ void GameLogic::processJob( const Job& job ) {
 }
 
 void GameLogic::onPlayerJoin( std::uint8_t playerNum ) {
+	joined_[ playerNum - 1 ] = true;
 	characters_[ playerNum - 1 ] = Protocol::Character::America;
 	ready_[ playerNum - 1 ] = false;
 
-	if ( SessionManager::count( ) < Protocol::maxPlayers ) {
+	// 세션 수가 아니라 Join을 처리한 수로 셈
+	// 두 명이 거의 동시에 접속하면 상대가 세션에는 있어도 Join은 아직 큐에 남아 있을 수 있음
+	if ( joinedCount( ) < Protocol::maxPlayers ) {
 		std::cout << "상대 접속 대기\n";
 		return;
 	}
@@ -87,14 +107,22 @@ void GameLogic::onPlayerJoin( std::uint8_t playerNum ) {
 }
 
 void GameLogic::onPlayerLeave( std::uint8_t playerNum ) {
-	// 전송 실패로 이미 정리된 자리
-	if ( !SessionManager::isConnected( playerNum ) ) {
+	// 수신 스레드가 끝났으므로 자리 정리 (전송 실패로 게임에서 먼저 뺀 경우도 여기서 정리)
+	SessionManager::remove( playerNum );
+	dropPlayer( playerNum );
+}
+
+void GameLogic::dropPlayer( std::uint8_t playerNum ) {
+	auto i = playerNum - 1;
+	if ( !joined_[ i ] ) {
 		return;
 	}
 
-	SessionManager::remove( playerNum );
+	// 다음 사람이 이 자리에 들어와도 예전 선택이 보이지 않게 비움
+	joined_[ i ] = false;
+	characters_[ i ] = Protocol::Character::America;
 	std::cout << "플레이어 " << static_cast<int>( playerNum ) << " 퇴장 ("
-		<< SessionManager::count( ) << "/" << Protocol::maxPlayers << ")\n";
+		<< joinedCount( ) << "/" << Protocol::maxPlayers << ")\n";
 
 	// 혼자서는 이어갈 수 없으므로 경기, 카운트다운을 멈추고 대기로
 	if ( phase_ == Phase::Playing ) {
@@ -108,13 +136,28 @@ void GameLogic::onPlayerLeave( std::uint8_t playerNum ) {
 	auto enemyLeft = Protocol::S2C_EnemyLeft{ };
 	SessionManager::broadcast( &enemyLeft, sizeof( enemyLeft ) );
 	for ( std::uint8_t num = 1; num <= Protocol::maxPlayers; ++num ) {
-		if ( SessionManager::isConnected( num ) ) {
+		if ( joined_[ num - 1 ] ) {
 			sendSelection( num );
 		}
 	}
 }
 
+int GameLogic::joinedCount( ) {
+	int cnt = 0;
+	for ( bool joined : joined_ ) {
+		if ( joined ) {
+			++cnt;
+		}
+	}
+	return cnt;
+}
+
 void GameLogic::onPacket( std::uint8_t playerNum, const char* data, int size ) {
+	// 게임에서 뺀 플레이어가 PlayerLeave 전까지 보내는 패킷은 버림
+	if ( !joined_[ playerNum - 1 ] ) {
+		return;
+	}
+
 	auto header = reinterpret_cast<const Protocol::PacketHeader*>( data );
 
 	switch ( header->type ) {
@@ -281,7 +324,8 @@ void GameLogic::render( ) {
 	}
 }
 
-JobQueue GameLogic::jobQueue_;
+std::array<JobQueue, Protocol::maxPlayers> GameLogic::playerQueues_;
+std::queue<Job> GameLogic::jobs_;
 double GameLogic::nextTick_;
 
 Phase GameLogic::phase_ = Phase::Waiting;
@@ -292,6 +336,7 @@ std::uint8_t GameLogic::stage_ = 1;
 bool GameLogic::started_ = false;
 bool GameLogic::ended_ = false;
 
+std::array<bool, Protocol::maxPlayers> GameLogic::joined_{ };
 std::array<Protocol::Character, Protocol::maxPlayers> GameLogic::characters_{ };
 std::array<bool, Protocol::maxPlayers> GameLogic::ready_{ };
 std::array<std::uint8_t, Protocol::maxPlayers> GameLogic::scores_{ };

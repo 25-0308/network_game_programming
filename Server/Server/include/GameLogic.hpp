@@ -13,9 +13,10 @@ enum class Phase : std::uint8_t {
 	Playing,	// 경기 중
 };
 
-// 게임 전체 흐름: 매 틱 전체 작업큐를 순서대로 실행 -> 단계 진행 -> 클라에 전송
+// 게임 전체 흐름 (게임 로직 스레드에서만 실행)
+// 매 틱 플레이어 작업큐 1P, 2P를 번갈아 전체 작업큐로 가져와 순서대로 실행 -> 단계 진행 -> 클라에 전송
 // 대기 -> 선택 -> 카운트다운 -> 경기 -> (시간 종료) 선택, 도중에 나가면 대기로
-// 소켓 닫기와 패킷 처리는 여기서만 함 (지금은 메인 스레드, 추후 게임 로직 스레드)
+// 패킷 처리, 전송, 소켓 닫기는 여기서만 함
 class GameLogic {
 public:
 	// 타이머 시작, 첫 틱 예약
@@ -31,13 +32,20 @@ public:
 	static void tick( );
 
 private:
-	// 쌓인 작업을 넣은 순서대로 모두 실행
+	// 플레이어 작업큐를 번갈아 전체 작업큐로 가져온 뒤 순서대로 모두 실행
 	static void processJobs( );
 	static void processJob( const Job& job );
 
 	static void onPlayerJoin( std::uint8_t playerNum );
 	static void onPlayerLeave( std::uint8_t playerNum );
 	static void onPacket( std::uint8_t playerNum, const char* data, int size );
+
+	// 게임에서 퇴장 처리: 경기 중단, 대기로, 상대에게 S2C_EnemyLeft
+	// PlayerLeave나 전송 실패 때 호출, 이미 뺀 플레이어면 아무것도 안 함
+	static void dropPlayer( std::uint8_t playerNum );
+
+	// PlayerJoin을 처리했고 아직 PlayerLeave가 오지 않은 플레이어 수
+	static int joinedCount( );
 
 	// 캐릭터 변경, 준비, 준비 취소
 	static void onSelectCharacter( std::uint8_t playerNum, const Protocol::C2S_SelectCharacter& select );
@@ -57,7 +65,12 @@ private:
 	// 이번 틱 결과를 클라에 전송
 	static void render( );
 
-	static JobQueue jobQueue_;
+	// 플레이어별 작업큐 (락 있음), [0] = 1P, [1] = 2P
+	static std::array<JobQueue, Protocol::maxPlayers> playerQueues_;
+
+	// 전체 작업큐, 게임 로직 스레드만 쓰므로 락 없음
+	static std::queue<Job> jobs_;
+
 	static double nextTick_;
 
 	static Phase phase_;
@@ -67,6 +80,9 @@ private:
 	static std::uint8_t stage_;	// 1 ~ stageCount
 	static bool started_;		// 이번 틱에 경기 시작 (render에서 S2C_GameStart 전송)
 	static bool ended_;			// 이번 틱에 시간이 끝남 (render에서 S2C_GameEnd 전송)
+
+	// Join 처리 여부 (게임 로직 스레드 기준의 접속 인원, SessionManager와 따로 관리)
+	static std::array<bool, Protocol::maxPlayers> joined_;
 
 	// 플레이어별 선택 중인 캐릭터와 준비 상태
 	static std::array<Protocol::Character, Protocol::maxPlayers> characters_;
