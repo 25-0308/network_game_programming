@@ -10,24 +10,13 @@
 class Player : public Object
 {
 public:
-	Player(const std::string& name, int ss, int ks, int js, const std::string& lr,int num)
+	// ss(속도), js(점프) 스탯은 서버 Player가 이동 계산에 씀 (클라는 S2C_GameState 위치만 받음)
+	Player(const std::string& name, [[maybe_unused]] int ss, int ks, [[maybe_unused]] int js, const std::string& lr,int num)
 		: characterName_{ name } {
 		auto filePath = fs::path( "assets/" + name + "_player_" + lr + ".png" );
 		auto keyVal = name + "_player_" + lr;
 		image_ = ResourceHandler::loadImage( keyVal, fs::canonical( filePath ).string( ), true );
 
-		jumppower =  -( 1250.f + (40.f*js));
-		speed = ss * 50.f;
-		jspeed = 0.0f;
-		ldtimer_ = 0.0f;
-		rdtimer_ = 0.0f;
-		// a dash moves 100px over its 0.075s (dashtimer), the same in every direction for both players
-		dashdis = 100.0f / 0.075f;
-		dashtimer = 0.0f;
-		dashintime = 0.0f;
-		ldashed = false;
-		rdashed = false;
-		jumped = false;
 		hp_ = maxHp;
 		stunT_ = 0.0f;
 		kickCooldown_ = 0.0f;
@@ -125,17 +114,10 @@ public:
 	static constexpr std::uint8_t kickFrameCnt = 8;
 	static constexpr float kickFrameTime = 0.03f;
 
-	// back to the kickoff position with no jump or dash in progress
+	// back to the kickoff position with no kick in progress
+	// (점프, 대시 상태는 서버 Player::resetToKickoff가 초기화)
 	void reset( PointFloat pos ) {
 		pos_ = pos;
-		jspeed = 0.0f;
-		ldtimer_ = 0.0f;
-		rdtimer_ = 0.0f;
-		dashtimer = 0.0f;
-		dashintime = 0.0f;
-		ldashed = false;
-		rdashed = false;
-		jumped = false;
 		kickCooldown_ = 0.0f;
 		kickAnimT_ = 0.0f;
 		getAnimator( )->play( idleAnimName( ) );
@@ -146,18 +128,7 @@ private:
 	const std::string characterName_;
 	int kickstat;
 	Image* image_;
-	float jumppower;
 	int pnum_;
-	float speed;
-	float jspeed;
-	float ldtimer_;
-	float rdtimer_;
-	float dashdis;
-	float dashtimer;
-	float dashintime;
-	bool ldashed;
-	bool rdashed;
-	bool jumped;
 	float hp_;
 	float stunT_;
 	float kickCooldown_;

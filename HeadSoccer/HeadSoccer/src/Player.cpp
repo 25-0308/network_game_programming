@@ -49,26 +49,10 @@ void Player::update() {
         return;
     }
 
+    // 중력, 지면 처리, 점프(jspeed), 대시, 걷기 속도, 벽 처리는 서버 Player가 계산함
+    // 위치는 S2C_GameState를 받을 때 update( state )에서 적용하고
+    // 달리기, 대기 애니메이션도 서버 anim을 applyServerAnim에서 따름
     float dt = Timer::fdt();
-
-    float width = 1280.0f;
-    float height = 580.f;
-
-    pos_.y += 1000.0f * dt;
-
-    pos_.y += jspeed * dt;
-    jspeed += 1000.0f * dt;
-
-    if (pos_.y + scale_.y >= height) {
-        pos_.y = height - scale_.y;
-        jumped = false;
-        // otherwise it keeps growing while standing and the next fall starts at full speed
-        jspeed = 0.0f;
-    }
-
-    ldtimer_ -= dt;
-    rdtimer_ -= dt;
-    dashintime -= dt;
 
     if ( isStunned( ) ) {
         stunT_ -= dt;
@@ -86,143 +70,11 @@ void Player::update() {
         }
     }
 
-    // 1P, 2P 모두 W 점프, A 왼쪽, D 오른쪽, S 발차기 (C2S_Input으로 보내는 키와 같음)
-    if (pnum_==1 && !isStunned()) {
-        if (InputHandler::getKeyState(Key::S) == KeyState::Tap) {
-            kick();
-        }
-
-        if (jumped == false && InputHandler::getKeyState(Key::W) == KeyState::Tap) {
-            jspeed = jumppower;
-            jumped = true;
-        }
-
-        if (dashintime <= 0.0f && InputHandler::getKeyState(Key::A) == KeyState::Away && ldtimer_ <= 0.0f) {
-            ldtimer_ = 0.3f;
-            rdtimer_ = 0.0f;
-        }
-        else if (dashintime <= 0.0f && InputHandler::getKeyState(Key::A) == KeyState::Away && ldtimer_ >= 0.0f) {
-            ldashed = true;
-            ldtimer_ = 0.0f;
-            dashtimer = 0.075f;
-            SoundHandler::playEffect( SoundEffect::Dash );
-        }
-        if (ldashed) {
-            pos_.x -= dashdis * dt;
-            dashtimer -= dt;
-            if (dashtimer <= 0.0f) {
-                dashintime = 0.5f;
-                ldashed = false;
-            }
-        }
-
-        if (InputHandler::getKeyState(Key::A) == KeyState::Tap ||
-            InputHandler::getKeyState(Key::A) == KeyState::Hold) {
-            pos_.x -= speed * dt;
-			playAnim( "player_run_back_left" );
-        }
-		else if ( InputHandler::getKeyState( Key::A ) == KeyState::Away ) {
-			playAnim( "player_idle_left" );
-		}
-
-        if (dashintime <= 0.0f && InputHandler::getKeyState(Key::D) == KeyState::Away && rdtimer_ <= 0.0f) {
-            ldtimer_ = 0.0f;
-            rdtimer_ = 0.3f;
-        }
-        else if (dashintime <= 0.0f && InputHandler::getKeyState(Key::D) == KeyState::Away && rdtimer_ >= 0.0f) {
-            rdashed = true;
-            rdtimer_ = 0.0f;
-            dashtimer = 0.075f;
-            SoundHandler::playEffect( SoundEffect::Dash );
-        }
-        if (rdashed) {
-            pos_.x += dashdis * dt;
-            dashtimer -= dt;
-            if (dashtimer <= 0.0f) {
-                dashintime = 0.5f;
-                rdashed = false;
-            }
-        }
-
-        if (InputHandler::getKeyState(Key::D) == KeyState::Tap ||
-            InputHandler::getKeyState(Key::D) == KeyState::Hold) {
-            pos_.x += speed * dt;
-			playAnim( "player_run_front_left" );
-        }
-        else if ( InputHandler::getKeyState( Key::D ) == KeyState::Away ) {
-            playAnim( "player_idle_left" );
-        }
+    // 발차기 모션은 키를 누른 프레임에 바로 시작 (서버 Kick 애니메이션을 기다리면 늦게 보임)
+    // 1P, 2P 모두 S 발차기 (C2S_Input으로 보내는 키와 같음)
+    if ( !isStunned( ) && InputHandler::getKeyState( Key::S ) == KeyState::Tap ) {
+        kick( );
     }
-
-    if (pnum_ == 2 && !isStunned()) {
-        if (InputHandler::getKeyState(Key::S) == KeyState::Tap) {
-            kick();
-        }
-
-        if (jumped == false && InputHandler::getKeyState(Key::W) == KeyState::Tap) {
-            jspeed = jumppower;
-            jumped = true;
-        }
-
-        if (InputHandler::getKeyState(Key::A) == KeyState::Tap ||
-            InputHandler::getKeyState(Key::A) == KeyState::Hold) {
-            pos_.x -= speed * dt;
-			playAnim( "player_run_front_right" );
-        }
-		else if ( InputHandler::getKeyState( Key::A ) == KeyState::Away ) {
-			playAnim( "player_idle_right" );
-		}
-
-        if (dashintime <= 0.0f && InputHandler::getKeyState(Key::A) == KeyState::Away && ldtimer_ <= 0.0f) {
-            ldtimer_ = 0.3f;
-            rdtimer_ = 0.0f;
-        }
-        else if (dashintime <= 0.0f && InputHandler::getKeyState(Key::A) == KeyState::Away && ldtimer_ >= 0.0f) {
-            ldashed = true;
-            ldtimer_ = 0.0f;
-            dashtimer = 0.075f;
-            SoundHandler::playEffect( SoundEffect::Dash );
-        }
-        if (ldashed) {
-            pos_.x -= dashdis * dt;
-            dashtimer -= dt;
-            if (dashtimer <= 0.0f) {
-                dashintime = 0.5f;
-                ldashed = false;
-            }
-        }
-
-        if (InputHandler::getKeyState(Key::D) == KeyState::Tap ||
-            InputHandler::getKeyState(Key::D) == KeyState::Hold) {
-            pos_.x += speed * dt;
-			playAnim( "player_run_back_right" );
-        }
-		else if ( InputHandler::getKeyState( Key::D ) == KeyState::Away ) {
-			playAnim( "player_idle_right" );
-		}
-
-        if (dashintime <= 0.0f && InputHandler::getKeyState(Key::D) == KeyState::Away && rdtimer_ <= 0.0f) {
-            ldtimer_ = 0.0f;
-            rdtimer_ = 0.3f;
-        }
-        else if (dashintime <= 0.0f && InputHandler::getKeyState(Key::D) == KeyState::Away && rdtimer_ >= 0.0f) {
-            rdashed = true;
-            rdtimer_ = 0.0f;
-            dashtimer = 0.075f;
-            SoundHandler::playEffect( SoundEffect::Dash );
-        }
-        if (rdashed) {
-            pos_.x += dashdis * dt;
-            dashtimer -= dt;
-            if (dashtimer <= 0.0f) {
-                dashintime = 0.5f;
-                rdashed = false;
-            }
-        }
-    }
-
-    if (pos_.x - scale_.x <= 0.0f) pos_.x = scale_.x;
-    else if (pos_.x + scale_.x >= width) pos_.x = width - scale_.x;
 
     componentUpdate( );
 }
@@ -300,8 +152,6 @@ void Player::takeHit( float damage ) {
 
     // knocked out: stand still until stunT_ runs out, then come back with full hp
     stunT_ = stunTime;
-    ldashed = false;
-    rdashed = false;
     kickAnimT_ = 0.f;
     getAnimator( )->play( idleAnimName( ) );
 }
@@ -386,11 +236,10 @@ void Player::separateFrom( Player* other ) {
     }
 
     if ( overlapY < overlapX ) {
-        // landed on the other player's head: stand on it, and allow jumping off
+        // landed on the other player's head: stand on it
+        // (점프 속도와 착지 상태는 서버 Player::separateFrom이 처리)
         Player* upper = delta.y > 0.f ? this : other;
         upper->pos_.y -= overlapY;
-        upper->jspeed = 0.f;
-        upper->jumped = false;
     }
     else {
         // side by side: push both apart by half the overlap
