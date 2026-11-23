@@ -8,8 +8,33 @@
 #include "../include/CollisionHandler.hpp"
 #include "../include/SoundHandler.hpp"
 #include "../include/Player.hpp"
+#include "../include/ImageStorage.hpp"
+#include "../include/CharacterInfo.hpp"
 
 #include <cstdio>
+#include <optional>
+
+extern CharacterInfo player1;
+extern CharacterInfo player2;
+
+namespace {
+	// "korea_left.png" 같은 캐릭터 이미지 이름 -> Protocol::Character
+	std::optional<Protocol::Character> characterFromImage( const std::string& imageName ) {
+		using Protocol::Character;
+		constexpr std::pair<const char*, Character> names[ ] = {
+			{ "america_", Character::America },
+			{ "argentina_", Character::Argentina },
+			{ "france_", Character::France },
+			{ "korea_", Character::Korea },
+		};
+		for ( const auto& [ prefix, character ] : names ) {
+			if ( imageName.starts_with( prefix ) ) {
+				return character;
+			}
+		}
+		return std::nullopt;
+	}
+}
 
 bool Game::init( HWND hWnd, POINT rsl, const wchar_t* serverIp ) {
 	hWnd_ = hWnd;
@@ -93,6 +118,7 @@ void Game::release( ) {
 void Game::step( ) {
 	InputHandler::update( );
 	sendInput( );
+	sendSelection( );
 
 	SceneHandler::update( );
 	CollisionHandler::update( );
@@ -136,6 +162,59 @@ void Game::sendInput( ) {
 	sentKeys_ = keys;
 }
 
+void Game::sendSelection( ) {
+	auto playerNum = ClientNetwork::getPlayerNum( );
+	if ( playerNum == 0 ) {
+		return;
+	}
+
+	auto character = sentCharacter_;
+	bool ready = false;
+
+	const auto sceneType = SceneHandler::getCurrSceneType( );
+	switch ( sceneType ) {
+	case SceneType::SelectCharacter: {
+		// 1P는 왼쪽, 2P는 오른쪽 캐릭터를 고름, 고르는 중에도 보내서 상대에게 보이게 함
+		// ImageStorage의 인덱스는 이름순이라 Protocol::Character 순서와 같음
+		auto storage = SceneHandler::getCurrScene( )->getObjectByName(
+			playerNum == 1 ? "image_storage_left" : "image_storage_right" );
+		if ( storage != nullptr ) {
+			character = static_cast<Protocol::Character>( static_cast<ImageStorage*>( storage )->getIndex( ) );
+		}
+		break;
+	}
+	case SceneType::SelectStage:
+	case SceneType::InGame: {
+		// 다음 버튼에서 확정한 캐릭터 (InGameScene이 Player를 만들 때 쓰는 정보와 같음)
+		const auto& info = playerNum == 1 ? player1 : player2;
+		if ( auto confirmed = characterFromImage( info.getImage( ) ) ) {
+			character = *confirmed;
+		}
+		ready = sceneType == SceneType::InGame;
+		break;
+	}
+	default:
+		// 타이틀, 결과 화면은 준비 해제만 함
+		break;
+	}
+
+	// 바뀔 때만 보냄
+	if ( character == sentCharacter_ && ready == sentReady_ ) {
+		return;
+	}
+
+	auto select = Protocol::C2S_SelectCharacter{ };
+	select.character = character;
+	select.confirmed = ready ? 1 : 0;
+	if ( !ClientNetwork::sendPacket( &select, sizeof( select ) ) ) {
+		// 끊긴 연결은 다음 poll에서 처리
+		std::printf( "C2S_SelectCharacter 전송 실패\n" );
+		return;
+	}
+	sentCharacter_ = character;
+	sentReady_ = ready;
+}
+
 void Game::handlePacket( const std::vector<char>& packet ) {
 	auto header = reinterpret_cast<const Protocol::PacketHeader*>( packet.data( ) );
 
@@ -152,6 +231,19 @@ void Game::handlePacket( const std::vector<char>& packet ) {
 		if ( packet.size( ) == sizeof( Protocol::S2C_Frame ) ) {
 			Timer::setFrame( *reinterpret_cast<const Protocol::S2C_Frame*>( packet.data( ) ) );
 			step( );
+		}
+		break;
+	}
+	case Protocol::PacketType::S2C_CharacterSelected: {
+		if ( packet.size( ) == sizeof( Protocol::S2C_CharacterSelected ) ) {
+			auto selected = reinterpret_cast<const Protocol::S2C_CharacterSelected*>( packet.data( ) );
+			// 내 선택은 서버 값으로 맞춤: 경기 종료나 상대 퇴장으로 서버가 준비를 풀면
+			// 아직 경기 화면에 있을 때 다음 sendSelection에서 다시 준비를 보냄
+			// (상대 선택 표시는 캐릭터 선택 화면 연동에서 처리)
+			if ( selected->playerNum == ClientNetwork::getPlayerNum( ) ) {
+				sentCharacter_ = selected->character;
+				sentReady_ = selected->confirmed != 0;
+			}
 		}
 		break;
 	}
@@ -204,3 +296,7 @@ HDC Game::memDC_;
 HBITMAP Game::memBmp_;
 
 std::uint8_t Game::sentKeys_ = 0;
+
+// 서버도 접속 시 America, 준비 안 함으로 시작
+Protocol::Character Game::sentCharacter_ = Protocol::Character::America;
+bool Game::sentReady_ = false;
