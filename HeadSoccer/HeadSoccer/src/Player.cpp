@@ -7,6 +7,7 @@
 #include "../include/Ball.hpp"
 #include "../include/SoundHandler.hpp"
 #include "../include/ClientNetwork.hpp"
+#include "GameConstants.hpp"
 
 bool Player::isRemote( ) const {
     return pnum_ != ClientNetwork::getPlayerNum( );
@@ -54,6 +55,11 @@ void Player::update() {
     // 달리기, 대기 애니메이션도 서버 anim을 applyServerAnim에서 따름
     float dt = Timer::fdt();
 
+    // 대시 효과음 판정 타이머 (서버처럼 기절 중에도 줄어듦)
+    lDashTapT_ -= dt;
+    rDashTapT_ -= dt;
+    dashCooldownT_ -= dt;
+
     if ( isStunned( ) ) {
         stunT_ -= dt;
         if ( stunT_ <= 0.f ) {
@@ -70,13 +76,52 @@ void Player::update() {
         }
     }
 
-    // 발차기 모션은 키를 누른 프레임에 바로 시작 (서버 Kick 애니메이션을 기다리면 늦게 보임)
-    // 1P, 2P 모두 S 발차기 (C2S_Input으로 보내는 키와 같음)
-    if ( !isStunned( ) && InputHandler::getKeyState( Key::S ) == KeyState::Tap ) {
-        kick( );
+    if ( isStunned( ) ) {
+        // 서버도 기절하면 진행 중인 대시를 끊음 (쿨타임은 걸지 않음)
+        lDashing_ = false;
+        rDashing_ = false;
+    }
+    else {
+        // 발차기 모션은 키를 누른 프레임에 바로 시작 (서버 Kick 애니메이션을 기다리면 늦게 보임)
+        // 1P, 2P 모두 S 발차기, A 왼쪽, D 오른쪽 (C2S_Input으로 보내는 키와 같음)
+        if ( InputHandler::getKeyState( Key::S ) == KeyState::Tap ) {
+            kick( );
+        }
+
+        // 대시 이동은 서버가 하고, 클라는 대시가 시작되는 순간 효과음만 냄
+        updateDashSound( InputHandler::getKeyState( Key::A ) == KeyState::Away,
+            lDashTapT_, rDashTapT_, lDashing_, dt );
+        updateDashSound( InputHandler::getKeyState( Key::D ) == KeyState::Away,
+            rDashTapT_, lDashTapT_, rDashing_, dt );
     }
 
     componentUpdate( );
+}
+
+void Player::updateDashSound( bool released, float& myTapT, float& otherTapT, bool& dashing, float dt ) {
+    // 같은 방향 키를 dashTapWindow 안에 두 번 떼면 대시 (서버 Player::moveHorizontal과 같은 규칙)
+    if ( dashCooldownT_ <= 0.f && released ) {
+        if ( myTapT <= 0.f ) {
+            // 첫 번째 뗌, 반대쪽 대기는 취소
+            myTapT = GameConst::dashTapWindow;
+            otherTapT = 0.f;
+        }
+        else {
+            dashing = true;
+            myTapT = 0.f;
+            dashT_ = GameConst::dashTime;
+            SoundHandler::playEffect( SoundEffect::Dash );
+        }
+    }
+
+    // 대시가 끝나야 쿨타임이 시작되므로 대시 시간도 따라감
+    if ( dashing ) {
+        dashT_ -= dt;
+        if ( dashT_ <= 0.f ) {
+            dashCooldownT_ = GameConst::dashCooldown;
+            dashing = false;
+        }
+    }
 }
 
 void Player::kick( ) {

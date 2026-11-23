@@ -118,6 +118,12 @@ public:
 	// (점프, 대시 상태는 서버 Player::resetToKickoff가 초기화)
 	void reset( PointFloat pos ) {
 		pos_ = pos;
+		lDashTapT_ = 0.f;
+		rDashTapT_ = 0.f;
+		dashT_ = 0.f;
+		dashCooldownT_ = 0.f;
+		lDashing_ = false;
+		rDashing_ = false;
 		kickCooldown_ = 0.0f;
 		kickAnimT_ = 0.0f;
 		getAnimator( )->play( idleAnimName( ) );
@@ -134,6 +140,18 @@ private:
 	float kickCooldown_;
 	float kickAnimT_;
 	std::optional<Protocol::PlayerAnim> serverAnim_;	// 마지막으로 받은 서버 애니메이션
+
+	// 대시 효과음 판정용 (대시 이동은 서버가 함), 서버 Player의 대시 규칙과 같음
+	float lDashTapT_ = 0.f;		// 왼쪽 키 두 번째 뗌을 기다리는 시간
+	float rDashTapT_ = 0.f;		// 오른쪽 키 두 번째 뗌을 기다리는 시간
+	float dashT_ = 0.f;			// 대시 남은 시간
+	float dashCooldownT_ = 0.f;	// 다음 대시까지 남은 시간
+	bool lDashing_ = false;
+	bool rDashing_ = false;
+
+	// 한 방향 키의 대시 판정, 대시가 시작되면 효과음만 재생
+	// released: 이번 프레임에 그 방향 키를 뗌 (KeyState::Away)
+	void updateDashSound( bool released, float& myTapT, float& otherTapT, bool& dashing, float dt );
 
 	void separateFrom( Player* other );
 
