@@ -1,4 +1,4 @@
-#ifndef __player_hpp
+﻿#ifndef __player_hpp
 #define __player_hpp
 
 #include "Object.hpp"
@@ -92,6 +92,7 @@ public:
 	}
 
 	void update()override;
+	// S2C_GameState로 받은 서버 상태(위치, HP, 기절, 애니메이션) 적용
 	void update( const Protocol::PlayerState& state );
 	void render(HDC hdc)override;
 
@@ -113,7 +114,12 @@ public:
 		return pnum_;
 	}
 
+	// 원격 Player 모드: 이 클라이언트가 조작하지 않는 상대 Player
+	// 키 입력과 이동 계산 없이 서버 상태만 보여 줌
+	bool isRemote( ) const;
+
 	static constexpr float maxHp = 100.f;
+	static constexpr float kickCooldownTime = 0.5f;
 
 	// player_kick_*.png has 8 frames of 123x61
 	static constexpr std::uint8_t kickFrameCnt = 8;
@@ -156,9 +162,15 @@ private:
 	float stunT_;
 	float kickCooldown_;
 	float kickAnimT_;
-	std::optional<Protocol::PlayerAnim> serverAnim_;
+	std::optional<Protocol::PlayerAnim> serverAnim_;	// 마지막으로 받은 서버 애니메이션
 
 	void separateFrom( Player* other );
+
+	// 발차기 시작: 소리, 모션, 상대와 공 판정 (쿨타임 확인은 호출하는 쪽에서)
+	void startKick( );
+
+	// 서버 애니메이션 적용, Kick으로 바뀌는 순간을 발차기 이벤트로 봄
+	void applyServerAnim( Protocol::PlayerAnim anim );
 
 	// movement animations wait until the kick motion has finished
 	void playAnim( const std::string& name ) {
@@ -168,6 +180,21 @@ private:
 	}
 	const char* idleAnimName( ) const {
 		return pnum_ == 1 ? "player_idle_left" : "player_idle_right";
+	}
+	const char* kickAnimName( ) const {
+		return pnum_ == 1 ? "player_kick_left" : "player_kick_right";
+	}
+	// Idle, RunFront, RunBack의 애니메이션 이름 (Kick은 kickAnimName)
+	const char* moveAnimName( Protocol::PlayerAnim anim ) const {
+		const bool left = pnum_ == 1;
+		switch ( anim ) {
+		case Protocol::PlayerAnim::RunFront:
+			return left ? "player_run_front_left" : "player_run_front_right";
+		case Protocol::PlayerAnim::RunBack:
+			return left ? "player_run_back_left" : "player_run_back_right";
+		default:
+			return idleAnimName( );
+		}
 	}
 };
 
