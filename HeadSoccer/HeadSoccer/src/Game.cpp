@@ -148,6 +148,19 @@ void Game::handlePacket( const std::vector<char>& packet ) {
 		}
 		break;
 	}
+	case Protocol::PacketType::S2C_ChangeScene: {
+		if ( packet.size( ) == sizeof( Protocol::S2C_ChangeScene ) ) {
+			EventHandler::addEvent(
+				Event{
+					.type = EventType::ChangeScene,
+					.wParam = static_cast<DWORD_PTR>( SceneType::SelectCharacter )
+				}
+			);
+			// 뒤따르는 선택 상태 패킷보다 먼저 화면 전환을 완료한다.
+			EventHandler::update( );
+		}
+		break;
+	}
 	case Protocol::PacketType::S2C_Frame: {
 		if ( packet.size( ) == sizeof( Protocol::S2C_Frame ) ) {
 			Timer::setFrame( *reinterpret_cast<const Protocol::S2C_Frame*>( packet.data( ) ) );
