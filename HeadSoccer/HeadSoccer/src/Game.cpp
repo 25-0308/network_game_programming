@@ -247,6 +247,14 @@ void Game::handlePacket( const std::vector<char>& packet ) {
 		}
 		break;
 	}
+	case Protocol::PacketType::S2C_GameStart: {
+		if ( packet.size( ) == sizeof( Protocol::S2C_GameStart ) ) {
+			// 서버는 경기 시작 때 키 상태를 0으로 비우고, 경기 전에 보낸 C2S_Input은 버림
+			// 키를 누른 채 시작하면 바뀌지 않아서 다시 보내지 않으므로 서버와 같이 0으로 맞춰 다음 프레임에 다시 보냄
+			sentKeys_ = 0;
+		}
+		break;
+	}
 	case Protocol::PacketType::S2C_GameState: {
 		if ( packet.size( ) == sizeof( Protocol::S2C_GameState ) ) {
 			applyPlayerStates( *reinterpret_cast<const Protocol::S2C_GameState*>( packet.data( ) ) );
