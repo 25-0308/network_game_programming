@@ -22,8 +22,9 @@ public:
 	// 타이머 시작, 첫 틱 예약
 	static void init( );
 
-	// 전체 작업큐에 추가 (접속, 수신 쪽에서 호출)
-	static void pushJob( const Job& job );
+	// job.playerNum의 플레이어 작업큐에 추가 (메인, 플레이어 스레드에서 호출)
+	// Packet은 큐에 maxQueuedJobs개 이상 쌓여 있으면 넣지 않고 false, Join과 Leave는 항상 넣음
+	static bool pushJob( const Job& job );
 
 	// 다음 틱까지 남은 시간 (초), 0 이하면 틱을 돌릴 차례
 	static double timeUntilNextTick( );
