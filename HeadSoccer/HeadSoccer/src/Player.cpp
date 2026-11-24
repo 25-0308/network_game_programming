@@ -60,13 +60,7 @@ void Player::update() {
     rDashTapT_ -= dt;
     dashCooldownT_ -= dt;
 
-    if ( isStunned( ) ) {
-        stunT_ -= dt;
-        if ( stunT_ <= 0.f ) {
-            stunT_ = 0.f;
-            hp_ = maxHp;
-        }
-    }
+    // 기절 시간과 기절 후 HP 회복은 서버가 계산함 (S2C_GameState의 hp, stunned)
 
     kickCooldown_ -= dt;
     if ( kickAnimT_ > 0.f ) {
@@ -139,33 +133,12 @@ void Player::startKick( ) {
     getAnimator( )->playFromStart( kickAnimName( ) );
 
     const float kickRange = 90.f;
-    const float kickHitReach = 40.f;
-    // kick stat 5 -> 17.5 (6 hits to stun), 6 -> 21 (5 hits), 8 -> 28 (4 hits)
-    const float damagePerKickStat = 3.5f;
-    const float kickDamage = kickstat * damagePerKickStat;
 
     // player1 stands on the left and kicks right, player2 the opposite
     auto foot = pos_ + PointFloat( pnum_ == 1 ? 30.f : -30.f, 50.f );
     auto currScene = SceneHandler::getCurrScene( );
 
-    for ( Object* obj : currScene->getGroup( ObjectType::Player ) ) {
-        if ( obj == this ) {
-            continue;
-        }
-
-        // distance from the foot to the nearest point of the opponent's body box
-        auto body = obj->getCollider( );
-        auto boxPos = body->getFinalPos( );
-        auto half = body->getScale( ) / 2.f;
-        auto closest = PointFloat(
-            std::clamp( foot.x, boxPos.x - half.x, boxPos.x + half.x ),
-            std::clamp( foot.y, boxPos.y - half.y, boxPos.y + half.y ) );
-        auto diff = foot - closest;
-        if ( std::hypot( diff.x, diff.y ) <= kickHitReach ) {
-            static_cast<Player*>( obj )->takeHit( kickDamage );
-        }
-    }
-
+    // 상대 피격(HP 감소, 기절)은 서버가 판정해서 S2C_GameState로 옴
     for ( Object* obj : currScene->getGroup( ObjectType::Ball ) ) {
         auto ball = static_cast<Ball*>( obj );
         auto diff = ball->getPos( ) - foot;
@@ -182,30 +155,25 @@ void Player::startKick( ) {
     }
 }
 
-void Player::takeHit( float damage ) {
-    const float stunTime = 2.f;
-
-    if ( isStunned( ) || damage <= 0.f ) {
-        return;
-    }
-
-    hp_ = std::max( hp_ - damage, 0.f );
-    SoundHandler::playHitSound( characterName_ );
-    if ( hp_ > 0.f ) {
-        return;
-    }
-
-    // knocked out: stand still until stunT_ runs out, then come back with full hp
-    stunT_ = stunTime;
-    kickAnimT_ = 0.f;
-    getAnimator( )->play( idleAnimName( ) );
-}
-
 void Player::update( const Protocol::PlayerState& state ) {
     pos_ = PointFloat( state.x, state.y );
-    hp_ = static_cast<float>( state.hp );
-    // 남은 기절 시간은 오지 않으므로 기절 여부만 맞춤 (기절이 풀리는 시점도 서버를 따름)
-    stunT_ = state.stunned ? 1.f : 0.f;
+
+    // HP, 기절은 서버 Player::takeHit이 판정한 값을 그대로 씀
+    // 서버 HP는 맞을 때만 줄고(기절이 풀리면 다시 가득 참) 한 대에 1 이상 줄어서
+    // 받은 HP가 줄어든 순간 = 맞은 순간이라 그때 피격음을 냄
+    const float hp = static_cast<float>( state.hp );
+    if ( hp < hp_ ) {
+        SoundHandler::playHitSound( characterName_ );
+    }
+    hp_ = hp;
+
+    // 기절이 시작되면 진행 중인 발차기 모션을 끊음 (서버 takeHit과 같음)
+    const bool stunned = state.stunned != 0;
+    if ( stunned && !stunned_ ) {
+        kickAnimT_ = 0.f;
+        getAnimator( )->play( idleAnimName( ) );
+    }
+    stunned_ = stunned;
 
     applyServerAnim( state.anim );
 
@@ -256,45 +224,10 @@ void Player::render( HDC hdc ) {
     }
 }
 
+// Player끼리 밀어내기(separateFrom)는 서버 Match::tick이 하고 위치만 S2C_GameState로 받음
+// 남은 충돌은 Player-Ball 하나라 충돌 박스 표시용 카운트만 셈 (공 쪽 반응은 Ball이 처리)
 void Player::onCollisionEntry( Object* other ) {
     getCollider( )->addCollCnt( );
-    onCollision( other );
-}
-
-void Player::onCollision( Object* other ) {
-    // both players get this callback, so only player1 resolves the pair
-    auto otherPlayer = dynamic_cast<Player*>( other );
-    if ( otherPlayer != nullptr && pnum_ == 1 ) {
-        separateFrom( otherPlayer );
-    }
-}
-
-void Player::separateFrom( Player* other ) {
-    auto mine = getCollider( );
-    auto theirs = other->getCollider( );
-
-    auto delta = theirs->getFinalPos( ) - mine->getFinalPos( );
-    float overlapX = ( mine->getScale( ).x + theirs->getScale( ).x ) / 2.f - std::abs( delta.x );
-    float overlapY = ( mine->getScale( ).y + theirs->getScale( ).y ) / 2.f - std::abs( delta.y );
-    if ( overlapX <= 0.f || overlapY <= 0.f ) {
-        return;
-    }
-
-    if ( overlapY < overlapX ) {
-        // landed on the other player's head: stand on it
-        // (점프 속도와 착지 상태는 서버 Player::separateFrom이 처리)
-        Player* upper = delta.y > 0.f ? this : other;
-        upper->pos_.y -= overlapY;
-    }
-    else {
-        // side by side: push both apart by half the overlap
-        float dir = delta.x >= 0.f ? 1.f : -1.f;
-        pos_.x -= dir * overlapX / 2.f;
-        other->pos_.x += dir * overlapX / 2.f;
-    }
-
-    mine->update( pos_ );
-    theirs->update( other->pos_ );
 }
 
 void Player::onCollisionExit( Object* other ) {
