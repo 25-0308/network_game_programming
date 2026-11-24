@@ -12,6 +12,7 @@ public:
 	TextLabel( const TextLabel& ) = delete;
 
 	void render( HDC hdc ) override;
+	void setText( std::wstring_view text ) { text_ = text; }
 
 	// draws text with a black outline; uses the font and text align already selected in hdc
 	static void drawOutlined( HDC hdc, std::wstring_view text, int x, int y, COLORREF color );

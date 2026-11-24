@@ -5,6 +5,7 @@
 #include "../include/Button.hpp"
 #include "../include/ImageStorage.hpp"
 #include "../include/CharacterInfo.hpp"
+#include "../include/TextLabel.hpp"
 
 #include <list>
 
@@ -80,7 +81,16 @@ void CharacterScene::entry( ) {
 	nextBtn->setPos( PointFloat( 1130.f, 665.f ) );
 	addObject( ObjectType::Button, nextBtn );
 
+	for ( int num = 1; num <= 2; ++num ) {
+		auto text = num == 1 ? L"1P SELECTING" : L"2P SELECTING";
+		auto label = new TextLabel( text, 24, RGB( 255, 255, 255 ) );
+		label->setName( num == 1 ? "player1_selection_state" : "player2_selection_state" );
+		label->setPos( PointFloat( num == 1 ? 310.f : 985.f, 580.f ) );
+		addObject( ObjectType::Overlay, label );
+	}
+
 	Camera::setPos( { 0.f, 0.f } );
+	Game::restoreSelection( );
 }
 
 void CharacterScene::exit( ) {

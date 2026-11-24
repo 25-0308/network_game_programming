@@ -7,6 +7,7 @@
 #include "../include/SceneHandler.hpp"
 #include "../include/CharacterInfo.hpp"
 #include "../include/ImageStorage.hpp"
+#include "../include/Game.hpp"
 
 //#include <iostream>
 extern StageNumber stageNum;
@@ -54,12 +55,13 @@ void Button::update( ) {
 }
 
 void Button::update( bool selected ) {
+    // 서버 선택 표시만 반영하고, 마우스 입력은 프레임 update()에서 한 번 처리한다.
 	resetImageState( );
 	if ( selected ) {
 		imageOff_ = imageOn_;
 	}
 
-	update( );
+	componentUpdate( );
 }
 
 void Button::render( HDC hdc ) {
@@ -143,6 +145,7 @@ void Button::mouseLbtnClicked( ) {
 		);
 	}
 	else if ( name == "character_back_button" ) {
+		Game::sendSelection( false );
 		EventHandler::addEvent(
 			Event{
 				.type = EventType::ChangeScene,
@@ -151,28 +154,7 @@ void Button::mouseLbtnClicked( ) {
 		);
 	}
 	else if ( name == "character_next_button" ) {
-		auto leftImageStorage = SceneHandler::getCurrScene()->getObjectByName("image_storage_left");
-		if (leftImageStorage) {
-			auto leftStorage = static_cast<ImageStorage*>(leftImageStorage);
-			player1.setStats(leftStorage->getspeed(), leftStorage->getkick(), leftStorage->getjump() );
-			player1.setImage(leftStorage->getimageName());
-			player1.setFlag(leftStorage->getflagName());
-		}
-
-		// 오른쪽 캐릭터 (player2) 데이터 설정
-		auto rightImageStorage = SceneHandler::getCurrScene()->getObjectByName("image_storage_right");
-		if (rightImageStorage) {
-			auto rightStorage = static_cast<ImageStorage*>(rightImageStorage);
-			player2.setStats(rightStorage->getspeed(), rightStorage->getkick(), rightStorage->getjump());
-			player2.setImage(rightStorage->getimageName());
-			player2.setFlag(rightStorage->getflagName());
-		}
-		EventHandler::addEvent(
-			Event{
-				.type = EventType::ChangeScene,
-				.wParam = static_cast<DWORD_PTR>( SceneType::SelectStage )
-			}
-		);
+		Game::toggleReady( );
 	}
 	else if ( name == "mini_stage1" ) {
 		imageOff_ = imageOn_;

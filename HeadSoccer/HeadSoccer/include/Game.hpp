@@ -10,6 +10,9 @@ public:
 	static bool init( HWND hWnd, POINT rsl, const wchar_t* serverIp );
 	static void start( );
 	static void release( );
+	static void sendSelection( bool confirmed );
+	static void toggleReady( );
+	static void restoreSelection( );
 
 	static HWND getHwnd( ) {
 		return hWnd_;
@@ -28,6 +31,7 @@ private:
 
 	// 받은 패킷 하나 처리
 	static void handlePacket( const std::vector<char>& packet );
+	static void applySelection( const Protocol::S2C_CharacterSelected& selected );
 
 	// S2C_GameState의 두 플레이어 상태를 InGame 씬의 Player에 적용
 	static void applyPlayerStates( const Protocol::S2C_GameState& state );
@@ -43,6 +47,7 @@ private:
 	static HBITMAP memBmp_;
 
 	static std::uint8_t sentKeys_;	// 마지막으로 보낸 C2S_Input::keys
+	static std::array<Protocol::S2C_CharacterSelected, Protocol::maxPlayers> characterSelections_;
 };
 
 #endif	// __game_hpp

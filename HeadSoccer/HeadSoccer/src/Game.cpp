@@ -8,6 +8,9 @@
 #include "../include/CollisionHandler.hpp"
 #include "../include/SoundHandler.hpp"
 #include "../include/Player.hpp"
+#include "../include/ImageStorage.hpp"
+#include "../include/Button.hpp"
+#include "../include/TextLabel.hpp"
 
 #include <cstdio>
 
@@ -136,6 +139,35 @@ void Game::sendInput( ) {
 	sentKeys_ = keys;
 }
 
+void Game::sendSelection( bool confirmed ) {
+	auto num = ClientNetwork::getPlayerNum( );
+	if ( num < 1 || num > Protocol::maxPlayers
+		|| SceneHandler::getCurrSceneType( ) != SceneType::SelectCharacter ) {
+		return;
+	}
+
+	auto name = num == 1 ? "image_storage_left" : "image_storage_right";
+	auto storage = static_cast<ImageStorage*>( SceneHandler::getCurrScene( )->getObjectByName( name ) );
+	if ( storage == nullptr ) {
+		return;
+	}
+
+	auto select = Protocol::C2S_SelectCharacter{ };
+	select.character = static_cast<Protocol::Character>( storage->getIndex( ) );
+	select.confirmed = confirmed ? 1 : 0;
+	if ( !ClientNetwork::sendPacket( &select, sizeof( select ) ) ) {
+		std::printf( "C2S_SelectCharacter 전송 실패\n" );
+	}
+}
+
+void Game::toggleReady( ) {
+	auto num = ClientNetwork::getPlayerNum( );
+	if ( num < 1 || num > Protocol::maxPlayers ) {
+		return;
+	}
+	sendSelection( characterSelections_[ num - 1 ].confirmed == 0 );
+}
+
 void Game::handlePacket( const std::vector<char>& packet ) {
 	auto header = reinterpret_cast<const Protocol::PacketHeader*>( packet.data( ) );
 
@@ -161,6 +193,12 @@ void Game::handlePacket( const std::vector<char>& packet ) {
 		}
 		break;
 	}
+	case Protocol::PacketType::S2C_CharacterSelected: {
+		if ( packet.size( ) == sizeof( Protocol::S2C_CharacterSelected ) ) {
+			applySelection( *reinterpret_cast<const Protocol::S2C_CharacterSelected*>( packet.data( ) ) );
+		}
+		break;
+	}
 	case Protocol::PacketType::S2C_Frame: {
 		if ( packet.size( ) == sizeof( Protocol::S2C_Frame ) ) {
 			Timer::setFrame( *reinterpret_cast<const Protocol::S2C_Frame*>( packet.data( ) ) );
@@ -177,6 +215,50 @@ void Game::handlePacket( const std::vector<char>& packet ) {
 	default:
 		// 나머지 패킷은 이후 일정에서 처리
 		break;
+	}
+}
+
+void Game::applySelection( const Protocol::S2C_CharacterSelected& selected ) {
+	if ( selected.playerNum < 1 || selected.playerNum > Protocol::maxPlayers
+		|| static_cast<std::uint8_t>( selected.character ) > static_cast<std::uint8_t>( Protocol::Character::Korea )
+		|| selected.confirmed > 1 ) {
+		return;
+	}
+
+	characterSelections_[ selected.playerNum - 1 ] = selected;
+	if ( SceneHandler::getCurrSceneType( ) != SceneType::SelectCharacter ) {
+		return;
+	}
+
+	auto scene = SceneHandler::getCurrScene( );
+	auto name = selected.playerNum == 1 ? "image_storage_left" : "image_storage_right";
+	auto storage = static_cast<ImageStorage*>( scene->getObjectByName( name ) );
+	if ( storage == nullptr ) {
+		return;
+	}
+	auto index = static_cast<std::int32_t>( selected.character );
+	const bool ownSelection = selected.playerNum == ClientNetwork::getPlayerNum( );
+	storage->update( index );
+
+	auto labelName = selected.playerNum == 1 ? "player1_selection_state" : "player2_selection_state";
+	if ( auto label = static_cast<TextLabel*>( scene->getObjectByName( labelName ) ) ) {
+		auto text = std::wstring( selected.playerNum == 1 ? L"1P " : L"2P " );
+		text += selected.confirmed ? L"READY" : L"SELECTING";
+		label->setText( text );
+	}
+	if ( ownSelection ) {
+		if ( auto button = static_cast<Button*>( scene->getObjectByName( "character_next_button" ) ) ) {
+			button->update( selected.confirmed != 0 );
+		}
+	}
+}
+
+void Game::restoreSelection( ) {
+	if ( SceneHandler::getCurrSceneType( ) != SceneType::SelectCharacter ) {
+		return;
+	}
+	for ( const auto& selected : characterSelections_ ) {
+		applySelection( selected );
 	}
 }
 
@@ -217,3 +299,7 @@ HDC Game::memDC_;
 HBITMAP Game::memBmp_;
 
 std::uint8_t Game::sentKeys_ = 0;
+std::array<Protocol::S2C_CharacterSelected, Protocol::maxPlayers> Game::characterSelections_{
+	Protocol::S2C_CharacterSelected{ .playerNum = 1 },
+	Protocol::S2C_CharacterSelected{ .playerNum = 2 }
+};
