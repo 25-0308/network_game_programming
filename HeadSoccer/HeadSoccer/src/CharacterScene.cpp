@@ -100,6 +100,11 @@ void CharacterScene::entry( ) {
 		addObject( ObjectType::Overlay, label );
 	}
 
+	auto countdown = new TextLabel( L"", 160, RGB( 255, 225, 80 ) );
+	countdown->setName( "start_countdown" );
+	countdown->setPos( PointFloat( clientWidth / 2.f, clientHeight / 2.f ) );
+	addObject( ObjectType::Overlay, countdown );
+
 	Camera::setPos( { 0.f, 0.f } );
 	Game::restoreSelection( );
 }

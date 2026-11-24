@@ -180,6 +180,7 @@ namespace Protocol {
 		std::uint16_t fps;		// 서버 초당 프레임 수
 		std::uint16_t remainTime;	// 경기 남은 시간 (초)
 		std::uint8_t finished;	// 1이면 경기 시간 종료
+		std::uint8_t countdown;	// 시작 대기 3, 2, 1 / 0이면 표시하지 않음
 	};
 
 	// 충돌이 시작될 때 한 번만 보냄 (닿아 있는 동안 매 틱 보내지 않음)
@@ -209,7 +210,7 @@ namespace Protocol {
 	static_assert( sizeof( S2C_Goal ) == 5 );
 	static_assert( sizeof( S2C_GameEnd ) == 5 );
 	static_assert( sizeof( S2C_EnemyLeft ) == 3 );
-	static_assert( sizeof( S2C_Frame ) == 16 );
+	static_assert( sizeof( S2C_Frame ) == 17 );
 	static_assert( sizeof( S2C_Collision ) == 14 );
 
 }	// namespace Protocol

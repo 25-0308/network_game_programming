@@ -13,6 +13,7 @@ public:
 	static void sendSelection( bool confirmed );
 	static void toggleReady( );
 	static void restoreSelection( );
+	static bool canBack( );
 
 	static HWND getHwnd( ) {
 		return hWnd_;

@@ -145,6 +145,9 @@ void Button::mouseLbtnClicked( ) {
 		);
 	}
 	else if ( name == "character_back_button" ) {
+		if ( !Game::canBack( ) ) {
+			return;
+		}
 		Game::sendSelection( false );
 		EventHandler::addEvent(
 			Event{

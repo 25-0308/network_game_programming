@@ -15,6 +15,9 @@ TextLabel::~TextLabel( ) {
 }
 
 void TextLabel::render( HDC hdc ) {
+	if ( text_.empty( ) ) {
+		return;
+	}
 	auto relativePos = pos_ - Camera::getPos( );
 
 	auto oldFont = (HFONT)SelectObject( hdc, font_ );

@@ -160,6 +160,11 @@ void Game::sendSelection( bool confirmed ) {
 	}
 }
 
+bool Game::canBack( ) {
+	auto num = ClientNetwork::getPlayerNum( );
+	return num < 1 || num > Protocol::maxPlayers || characterSelections_[ num - 1 ].confirmed == 0;
+}
+
 void Game::toggleReady( ) {
 	auto num = ClientNetwork::getPlayerNum( );
 	if ( num < 1 || num > Protocol::maxPlayers ) {
@@ -201,7 +206,15 @@ void Game::handlePacket( const std::vector<char>& packet ) {
 	}
 	case Protocol::PacketType::S2C_Frame: {
 		if ( packet.size( ) == sizeof( Protocol::S2C_Frame ) ) {
-			Timer::setFrame( *reinterpret_cast<const Protocol::S2C_Frame*>( packet.data( ) ) );
+			auto frame = reinterpret_cast<const Protocol::S2C_Frame*>( packet.data( ) );
+			Timer::setFrame( *frame );
+			if ( SceneHandler::getCurrSceneType( ) == SceneType::SelectCharacter ) {
+				auto countdown = static_cast<TextLabel*>( SceneHandler::getCurrScene( )->getObjectByName( "start_countdown" ) );
+				if ( countdown ) {
+					countdown->setText( frame->countdown >= 1 && frame->countdown <= 3
+						? std::to_wstring( frame->countdown ) : L"" );
+				}
+			}
 			step( );
 		}
 		break;
