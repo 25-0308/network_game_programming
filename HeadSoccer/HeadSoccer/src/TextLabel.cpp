@@ -3,8 +3,11 @@
 
 TextLabel::TextLabel( std::wstring_view text, int fontHeight, COLORREF color )
 	: text_( text ), fontHeight_{ fontHeight }, color_{ color } {
-	font_ = CreateFontW( fontHeight, 0, 0, 0, FW_HEAVY, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
-		OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH, L"Arial Black" );
+	const bool smallLabel = fontHeight <= 32;
+	font_ = CreateFontW( smallLabel ? -fontHeight : fontHeight, 0, 0, 0,
+		smallLabel ? FW_BOLD : FW_HEAVY, FALSE, FALSE, FALSE, DEFAULT_CHARSET,
+		OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, ANTIALIASED_QUALITY, DEFAULT_PITCH,
+		smallLabel ? L"Arial" : L"Arial Black" );
 }
 
 TextLabel::~TextLabel( ) {
@@ -30,14 +33,22 @@ void TextLabel::render( HDC hdc ) {
 
 void TextLabel::drawOutlined( HDC hdc, std::wstring_view text, int x, int y, COLORREF color ) {
 	auto len = static_cast<int>( text.size( ) );
-
-	SetTextColor( hdc, RGB( 0, 0, 0 ) );
-	for ( auto dx = -4; dx <= 4; dx += 4 ) {
-		for ( auto dy = -4; dy <= 4; dy += 4 ) {
-			TextOutW( hdc, x + dx, y + dy, text.data( ), len );
+	auto oldMode = SetBkMode( hdc, TRANSPARENT );
+	if ( auto pen = CreatePen( PS_SOLID, 12, RGB( 0, 0, 0 ) ) ) {
+		auto oldPen = SelectObject( hdc, pen );
+		if ( BeginPath( hdc ) ) {
+			if ( TextOutW( hdc, x, y, text.data( ), len ) && EndPath( hdc ) ) {
+				StrokePath( hdc );
+			}
+			else {
+				AbortPath( hdc );
+			}
 		}
+		SelectObject( hdc, oldPen );
+		DeleteObject( pen );
 	}
 
 	SetTextColor( hdc, color );
 	TextOutW( hdc, x, y, text.data( ), len );
+	SetBkMode( hdc, oldMode );
 }

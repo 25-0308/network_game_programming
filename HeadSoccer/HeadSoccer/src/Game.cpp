@@ -243,6 +243,9 @@ void Game::applySelection( const Protocol::S2C_CharacterSelected& selected ) {
 	auto labelName = selected.playerNum == 1 ? "player1_selection_state" : "player2_selection_state";
 	if ( auto label = static_cast<TextLabel*>( scene->getObjectByName( labelName ) ) ) {
 		auto text = std::wstring( selected.playerNum == 1 ? L"1P " : L"2P " );
+		if ( ownSelection ) {
+			text += L"(YOU) ";
+		}
 		text += selected.confirmed ? L"READY" : L"SELECTING";
 		label->setText( text );
 	}
