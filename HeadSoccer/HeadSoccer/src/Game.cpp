@@ -11,8 +11,14 @@
 #include "../include/ImageStorage.hpp"
 #include "../include/Button.hpp"
 #include "../include/TextLabel.hpp"
+#include "../include/CharacterInfo.hpp"
+#include "GameConstants.hpp"
 
 #include <cstdio>
+
+extern CharacterInfo player1;
+extern CharacterInfo player2;
+extern StageNumber stageNum;
 
 bool Game::init( HWND hWnd, POINT rsl, const wchar_t* serverIp ) {
 	hWnd_ = hWnd;
@@ -204,6 +210,12 @@ void Game::handlePacket( const std::vector<char>& packet ) {
 		}
 		break;
 	}
+	case Protocol::PacketType::S2C_GameStart: {
+		if ( packet.size( ) == sizeof( Protocol::S2C_GameStart ) ) {
+			startMatch( *reinterpret_cast<const Protocol::S2C_GameStart*>( packet.data( ) ) );
+		}
+		break;
+	}
 	case Protocol::PacketType::S2C_Frame: {
 		if ( packet.size( ) == sizeof( Protocol::S2C_Frame ) ) {
 			auto frame = reinterpret_cast<const Protocol::S2C_Frame*>( packet.data( ) );
@@ -229,6 +241,37 @@ void Game::handlePacket( const std::vector<char>& packet ) {
 		// 나머지 패킷은 이후 일정에서 처리
 		break;
 	}
+}
+
+void Game::startMatch( const Protocol::S2C_GameStart& start ) {
+	if ( start.stage < 1 || start.stage > GameConst::stageCount
+		|| static_cast<std::size_t>( start.p1Character ) >= GameConst::characterStats.size( )
+		|| static_cast<std::size_t>( start.p2Character ) >= GameConst::characterStats.size( )
+		|| SceneHandler::getCurrSceneType( ) == SceneType::InGame ) {
+		return;
+	}
+
+	constexpr const char* names[] = { "america", "argentina", "france", "korea" };
+	constexpr const char* flags[] = { "a_flag.png", "ag_flag.png", "f_flag.png", "k_flag.png" };
+	auto setCharacter = [&]( CharacterInfo& info, Protocol::Character character, const char* side ) {
+		auto index = static_cast<std::size_t>( character );
+		const auto& stats = GameConst::statOf( character );
+		info.setImage( std::string( names[ index ] ) + "_" + side + ".png" );
+		info.setFlag( flags[ index ] );
+		info.setStats( stats.speed, stats.kick, stats.jump );
+	};
+	setCharacter( player1, start.p1Character, "left" );
+	setCharacter( player2, start.p2Character, "right" );
+	stageNum = static_cast<StageNumber>( start.stage );
+
+	EventHandler::addEvent(
+		Event{
+			.type = EventType::ChangeScene,
+			.wParam = static_cast<DWORD_PTR>( SceneType::InGame )
+		}
+	);
+	// 같은 수신 묶음의 첫 상태 패킷보다 먼저 경기 화면의 entry()를 끝낸다.
+	EventHandler::update( );
 }
 
 void Game::applySelection( const Protocol::S2C_CharacterSelected& selected ) {

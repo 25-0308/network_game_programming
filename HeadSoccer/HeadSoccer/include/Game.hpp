@@ -32,6 +32,7 @@ private:
 
 	// 받은 패킷 하나 처리
 	static void handlePacket( const std::vector<char>& packet );
+	static void startMatch( const Protocol::S2C_GameStart& start );
 	static void applySelection( const Protocol::S2C_CharacterSelected& selected );
 
 	// S2C_GameState의 두 플레이어 상태를 InGame 씬의 Player에 적용
