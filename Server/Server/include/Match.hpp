@@ -3,6 +3,7 @@
 
 #include "common.hpp"
 #include "Player.hpp"
+#include "Ball.hpp"
 
 // 경기 한 판의 상태와 고정 dt 틱 진행
 // 클라이언트 InGameScene + CollisionHandler에서 player부분을 이전
@@ -22,11 +23,16 @@ public:
 		return players_[ playerNum - 1 ];
 	}
 
+	const ServerGame::Ball& ball( ) const {
+		return ball_;
+	}
+
 private:
 	// kicker의 발차기를 상대에게 판정 (클라 Player::kick의 뒷부분)
 	void resolveKick( Player& kicker, Player& target );
 
 	std::array<Player, Protocol::maxPlayers> players_;	// [0] = 1P, [1] = 2P
+	ServerGame::Ball ball_;
 };
 
 #endif	// __match_hpp

@@ -65,6 +65,12 @@ void ResultScene::entry( ) {
 	p2->setPos( PointFloat( 980.f, 350.f ) );
 	addObject( ObjectType::Player, p2 );
 
+	auto score = new TextLabel( std::to_wstring( p1GoalScore ) + L" : " + std::to_wstring( p2GoalScore ),
+		64, RGB( 255, 225, 80 ) );
+	score->setName( "final_score" );
+	score->setPos( PointFloat( 640.f, 100.f ) );
+	addObject( ObjectType::Overlay, score );
+
 	// more goals wins; there's no draw image, so a draw is drawn as text
 	if ( p1GoalScore == p2GoalScore ) {
 		for ( auto x : { 300.f, 980.f } ) {

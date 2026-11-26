@@ -19,7 +19,6 @@ public:
 private:
 	std::vector<Image*> digits;
 	std::uint16_t time_;
-	bool wasFinished_;	// 지난 update의 Timer::isFinished
 };
 
 #endif  // __stopwatch_hpp

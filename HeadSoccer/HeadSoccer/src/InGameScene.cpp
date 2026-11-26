@@ -142,10 +142,7 @@ void InGameScene::entry( ) {
 	addObject( ObjectType::GoalPost, rightGoalPost );
 	
 	Camera::setPos( { 0.f, 0.f } );
-	// Player끼리의 충돌(밀어내기)은 서버가 판정하므로 등록하지 않음
-	// Player-Ball은 공을 서버 값으로 바꾸기 전까지 클라에서 처리
-	CollisionHandler::checkCollision( ObjectType::Player, ObjectType::Ball );
-	CollisionHandler::checkCollision( ObjectType::Ball, ObjectType::GoalPost );
+	// Player끼리, Player-공, 공-골대 충돌은 모두 서버가 판정하므로 등록하지 않음
 }
 
 void InGameScene::exit( ) {

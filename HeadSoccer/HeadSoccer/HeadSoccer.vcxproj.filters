@@ -130,9 +130,6 @@
     <ClInclude Include="include\Ball.hpp">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Server\Server\include\Ball.hpp">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Common\PointFloat.hpp">
       <Filter>include</Filter>
     </ClInclude>
@@ -242,9 +239,6 @@
     </ClCompile>
     <ClCompile Include="src\Ball.cpp">
       <Filter>리소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Server\Server\src\Ball.cpp">
-      <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

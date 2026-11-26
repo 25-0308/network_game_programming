@@ -5,7 +5,7 @@
 #include "PointFloat.hpp"
 #include "ResourceHandler.hpp"
 #include "Image.hpp"
-#include "../../../Server/Server/include/Ball.hpp"
+#include "../../../Common/Protocol.hpp"
 
 
 class Ball : public Object {
@@ -16,20 +16,13 @@ public:
     void update( const Protocol::S2C_Ball& state );
     void render(HDC hdc)override;
     void applyState( const Protocol::S2C_Ball& state );
-    void kickleft();
-    void kickright();
-    void reset( PointFloat pos );
-    void onCollisionEntry( Object* other ) override;
-    void onCollision( Object* other ) override;
 private:
     Image* image;
-    // 로컬에서도 같은 계산식
-    ServerGame::Ball simulation_;
+    PointFloat velo_;
+    bool receivedState_ = false;
     float impactSoundCooldown_ = 0.f;
 
     void playImpactSound( float impactSpeed );
-
-    void handleCollision( Object* other, bool entering );
 };
 
 #endif	// __ball_hpp

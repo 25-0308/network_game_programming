@@ -3,6 +3,7 @@
 #include "../include/Timer.hpp"
 
 #include <random>
+#include <cmath>
 
 namespace {
 	constexpr double tickTime = 1.0 / GameConst::tickRate;
@@ -286,6 +287,8 @@ void GameLogic::render( ) {
 	frame.fps = Timer::fps( );
 	frame.remainTime = Timer::remainTime( );
 	frame.finished = Timer::isFinished( ) ? 1 : 0;
+	frame.countdown = phase_ == Phase::Countdown
+		? static_cast<std::uint8_t>( std::ceil( countdownT_ ) ) : 0;
 	SessionManager::broadcast( &frame, sizeof( frame ) );
 
 	// 경기 시작은 첫 상태보다 먼저 보냄
@@ -307,6 +310,9 @@ void GameLogic::render( ) {
 		}
 		state.remainTime = Timer::remainTime( );
 		SessionManager::broadcast( &state, sizeof( state ) );
+
+		auto ball = match_.ball( ).getState( );
+		SessionManager::broadcast( &ball, sizeof( ball ) );
 	}
 
 	// 종료 후 준비가 풀린 것도 같이 알림

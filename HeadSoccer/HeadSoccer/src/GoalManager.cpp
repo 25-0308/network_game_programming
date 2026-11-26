@@ -4,7 +4,6 @@
 #include "../include/Timer.hpp"
 #include "../include/Camera.hpp"
 #include "../include/Player.hpp"
-#include "../include/Ball.hpp"
 #include "../include/TextLabel.hpp"
 #include "../include/SoundHandler.hpp"
 
@@ -22,7 +21,6 @@ namespace {
 	constexpr float crossbarBottom = 420.f;
 
 	// same as the spawn positions in InGameScene::entry
-	const PointFloat ballStartPos( 640.f, 360.f );
 	const PointFloat p1StartPos( 300.f, 500.f );
 	const PointFloat p2StartPos( 980.f, 500.f );
 }
@@ -123,9 +121,6 @@ void GoalManager::scoreGoal( int scorer ) {
 void GoalManager::kickoff( ) {
 	auto currScene = SceneHandler::getCurrScene( );
 
-	for ( Object* obj : currScene->getGroup( ObjectType::Ball ) ) {
-		static_cast<Ball*>( obj )->reset( ballStartPos );
-	}
 
 	for ( Object* obj : currScene->getGroup( ObjectType::Player ) ) {
 		auto player = static_cast<Player*>( obj );

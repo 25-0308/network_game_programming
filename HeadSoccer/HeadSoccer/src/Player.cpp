@@ -4,7 +4,6 @@
 #include "../include/Camera.hpp"
 #include "../include/EventHandler.hpp"
 #include "../include/SceneHandler.hpp"
-#include "../include/Ball.hpp"
 #include "../include/SoundHandler.hpp"
 #include "../include/ClientNetwork.hpp"
 #include "GameConstants.hpp"
@@ -132,27 +131,7 @@ void Player::startKick( ) {
     kickAnimT_ = kickFrameCnt * kickFrameTime;
     getAnimator( )->playFromStart( kickAnimName( ) );
 
-    const float kickRange = 90.f;
-
-    // player1 stands on the left and kicks right, player2 the opposite
-    auto foot = pos_ + PointFloat( pnum_ == 1 ? 30.f : -30.f, 50.f );
-    auto currScene = SceneHandler::getCurrScene( );
-
-    // 상대 피격(HP 감소, 기절)은 서버가 판정해서 S2C_GameState로 옴
-    for ( Object* obj : currScene->getGroup( ObjectType::Ball ) ) {
-        auto ball = static_cast<Ball*>( obj );
-        auto diff = ball->getPos( ) - foot;
-        if ( std::hypot( diff.x, diff.y ) > kickRange ) {
-            continue;
-        }
-
-        if ( pnum_ == 1 ) {
-            ball->kickright( );
-        }
-        else {
-            ball->kickleft( );
-        }
-    }
+    // 상대 피격(HP 감소, 기절)과 공 차기는 서버가 판정해서 S2C_GameState, S2C_Ball로 옴
 }
 
 void Player::update( const Protocol::PlayerState& state ) {
