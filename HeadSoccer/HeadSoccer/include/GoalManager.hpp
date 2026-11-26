@@ -4,7 +4,7 @@
 #include "Object.hpp"
 #include "Image.hpp"
 
-// Detects goals, keeps the score UI, shows the goal screen and resets to kickoff.
+// Keeps the score UI and shows the goal screen; goals and kickoff are decided by the server.
 class GoalManager : public Object {
 public:
 	GoalManager( );
@@ -15,7 +15,6 @@ public:
 	void render( HDC hdc ) override;
 
 private:
-	void scoreGoal( int scorer );
 	void kickoff( );
 	void renderScore( HDC hdc, int score, PointFloat pos );
 	void renderGoalScreen( HDC hdc );

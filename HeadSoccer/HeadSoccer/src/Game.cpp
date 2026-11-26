@@ -12,6 +12,7 @@
 #include "../include/Button.hpp"
 #include "../include/TextLabel.hpp"
 #include "../include/CharacterInfo.hpp"
+#include "../include/GoalManager.hpp"
 #include "GameConstants.hpp"
 
 #include <cstdio>
@@ -251,6 +252,12 @@ void Game::handlePacket( const std::vector<char>& packet ) {
 		}
 		break;
 	}
+	case Protocol::PacketType::S2C_Goal: {
+		if ( packet.size( ) == sizeof( Protocol::S2C_Goal ) ) {
+			applyGoal( *reinterpret_cast<const Protocol::S2C_Goal*>( packet.data( ) ) );
+		}
+		break;
+	}
 	default:
 		// 나머지 패킷은 이후 일정에서 처리
 		break;
@@ -380,6 +387,33 @@ void Game::applyPlayerStates( const Protocol::S2C_GameState& state ) {
 		}
 		player->update( state.players[ num - 1 ] );
 	}
+}
+
+void Game::applyGoal( const Protocol::S2C_Goal& goal ) {
+	// 경기 중이 아니면 GoalManager가 없음
+	if ( SceneHandler::getCurrSceneType( ) != SceneType::InGame ) {
+		return;
+	}
+
+	auto goalManager = static_cast<GoalManager*>( SceneHandler::getCurrScene( )->getObjectByName( "goal_manager" ) );
+	if ( goalManager == nullptr ) {
+		return;
+	}
+
+	// 서버는 골마다 득점자 점수만 1 올리므로 지금 점수보다 커진 쪽이 득점자
+	// 골 화면 문구(PLAYER 1, 2)와 골 효과음은 GoalManager::update가 처리
+	int scorer = 0;
+	if ( goal.scores[ 0 ] > p1GoalScore ) {
+		scorer = 1;
+	}
+	else if ( goal.scores[ 1 ] > p2GoalScore ) {
+		scorer = 2;
+	}
+	else {
+		return;	// 이미 반영한 점수
+	}
+
+	goalManager->update( goal.scores[ 0 ], goal.scores[ 1 ], scorer, true );
 }
 
 HWND Game::hWnd_;

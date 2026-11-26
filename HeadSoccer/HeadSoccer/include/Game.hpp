@@ -39,6 +39,9 @@ private:
 	// S2C_GameState의 두 플레이어 상태를 InGame 씬의 Player에 적용
 	static void applyPlayerStates( const Protocol::S2C_GameState& state );
 
+	// S2C_Goal의 점수를 GoalManager에 적용하고 골 화면 시작
+	static void applyGoal( const Protocol::S2C_Goal& goal );
+
 	static HWND hWnd_;
 	static HDC hDC_;
 	static POINT rsl_;

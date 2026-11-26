@@ -47,30 +47,14 @@ GoalManager::~GoalManager( ) {
 }
 
 void GoalManager::update( ) {
-	// play goes on during the goal screen, but no new goal is counted until kickoff
-	if ( celebrating_ ) {
-		celebrateT_ += Timer::fdt( );
-		if ( celebrateT_ >= GameConst::goalScreenTime ) {
-			kickoff( );
-		}
+	// goals are detected by the server (Match::updateGoal), this only times the goal screen
+	if ( !celebrating_ ) {
 		return;
 	}
 
-	for ( Object* ball : SceneHandler::getCurrScene( )->getGroup( ObjectType::Ball ) ) {
-		auto pos = ball->getPos( );
-		if ( pos.y < GameConst::crossbarBottom ) {
-			continue;
-		}
-
-		// player2 attacks the left goal, player1 the right one
-		if ( pos.x <= GameConst::leftGoalLine ) {
-			scoreGoal( 2 );
-			return;
-		}
-		if ( pos.x >= GameConst::rightGoalLine ) {
-			scoreGoal( 1 );
-			return;
-		}
+	celebrateT_ += Timer::fdt( );
+	if ( celebrateT_ >= GameConst::goalScreenTime ) {
+		kickoff( );
 	}
 }
 
@@ -92,28 +76,14 @@ void GoalManager::update( int p1Score, int p2Score, int scorer, bool celebrating
 	}
 }
 
-void GoalManager::scoreGoal( int scorer ) {
-	if ( scorer == 1 ) {
-		++p1GoalScore;
-	}
-	else {
-		++p2GoalScore;
-	}
-
-	lastScorer_ = scorer;
-	celebrateT_ = 0.f;
-	celebrating_ = true;
-	SoundHandler::playEffect( SoundEffect::Goal );
-}
-
 void GoalManager::kickoff( ) {
 	auto currScene = SceneHandler::getCurrScene( );
 
+	// the kickoff positions come from the server (Player::resetToKickoff) in S2C_GameState,
+	// so keep the current position and only clear the local kick and dash sound state
 	for ( Object* obj : currScene->getGroup( ObjectType::Player ) ) {
 		auto player = static_cast<Player*>( obj );
-		player->reset( player->getName( ) == "player1"
-			? PointFloat( GameConst::p1StartX, GameConst::p1StartY )
-			: PointFloat( GameConst::p2StartX, GameConst::p2StartY ) );
+		player->reset( player->getPos( ) );
 	}
 
 	celebrating_ = false;
