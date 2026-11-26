@@ -8,6 +8,7 @@
 #include "../include/CollisionHandler.hpp"
 #include "../include/SoundHandler.hpp"
 #include "../include/Player.hpp"
+#include "../include/Ball.hpp"
 #include "../include/ImageStorage.hpp"
 #include "../include/Button.hpp"
 #include "../include/TextLabel.hpp"
@@ -236,6 +237,16 @@ void Game::handlePacket( const std::vector<char>& packet ) {
 				}
 			}
 			step( );
+		}
+		break;
+	}
+	case Protocol::PacketType::S2C_Ball: {
+		if ( packet.size( ) == sizeof( Protocol::S2C_Ball )
+			&& SceneHandler::getCurrSceneType( ) == SceneType::InGame ) {
+			auto state = reinterpret_cast<const Protocol::S2C_Ball*>( packet.data( ) );
+			for ( Object* obj : SceneHandler::getCurrScene( )->getGroup( ObjectType::Ball ) ) {
+				static_cast<Ball*>( obj )->update( *state );
+			}
 		}
 		break;
 	}

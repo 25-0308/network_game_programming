@@ -1,10 +1,11 @@
-﻿#include "../include/Match.hpp"
+#include "../include/Match.hpp"
 
 #include "../include/Timer.hpp"
 
 void Match::start( Protocol::Character p1Character, Protocol::Character p2Character ) {
 	players_[ 0 ].init( 1, p1Character );
 	players_[ 1 ].init( 2, p2Character );
+	ball_.reset( PointFloat( GameConst::ballStartX, GameConst::ballStartY ) );
 	Timer::startMatch( );
 }
 
@@ -30,12 +31,36 @@ void Match::tick( ) {
 		}
 	}
 
+	ball_.update( dt );
+
 	// 클라는 CollisionHandler가 겹침을 찾고 1P의 onCollision에서만 밀어냈음
 	players_[ 0 ].separateFrom( players_[ 1 ] );
+
+	for ( const auto& player : players_ ) {
+		auto body = player.body( );
+		ball_.onCollision( PointFloat( body.center.x, body.center.y ),
+			PointFloat( body.size.x, body.size.y ), GameConst::ballPlayerMinPush );
+	}
+
+	const PointFloat crossbarSize( GameConst::crossbarWidth, GameConst::crossbarHeight );
+	ball_.onCollision( PointFloat( GameConst::leftCrossbarX, GameConst::crossbarY ),
+		crossbarSize, GameConst::ballCrossbarMinPush );
+	ball_.onCollision( PointFloat( GameConst::rightCrossbarX, GameConst::crossbarY ),
+		crossbarSize, GameConst::ballCrossbarMinPush );
 }
 
 void Match::resolveKick( Player& kicker, Player& target ) {
 	if ( kicker.kickHits( target ) ) {
 		target.takeHit( kicker.kickDamage( ) );
+	}
+
+	auto state = ball_.getState( );
+	if ( kicker.kickReachesBall( Vec2( state.x, state.y ) ) ) {
+		if ( kicker.playerNum( ) == 1 ) {
+			ball_.kickright( );
+		}
+		else {
+			ball_.kickleft( );
+		}
 	}
 }

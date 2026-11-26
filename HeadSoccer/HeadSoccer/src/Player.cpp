@@ -4,7 +4,6 @@
 #include "../include/Camera.hpp"
 #include "../include/EventHandler.hpp"
 #include "../include/SceneHandler.hpp"
-#include "../include/Ball.hpp"
 #include "../include/SoundHandler.hpp"
 #include "../include/ClientNetwork.hpp"
 
@@ -241,7 +240,6 @@ void Player::startKick( ) {
     kickAnimT_ = kickFrameCnt * kickFrameTime;
     getAnimator( )->playFromStart( kickAnimName( ) );
 
-    const float kickRange = 90.f;
     const float kickHitReach = 40.f;
     // kick stat 5 -> 17.5 (6 hits to stun), 6 -> 21 (5 hits), 8 -> 28 (4 hits)
     const float damagePerKickStat = 3.5f;
@@ -269,20 +267,6 @@ void Player::startKick( ) {
         }
     }
 
-    for ( Object* obj : currScene->getGroup( ObjectType::Ball ) ) {
-        auto ball = static_cast<Ball*>( obj );
-        auto diff = ball->getPos( ) - foot;
-        if ( std::hypot( diff.x, diff.y ) > kickRange ) {
-            continue;
-        }
-
-        if ( pnum_ == 1 ) {
-            ball->kickright( );
-        }
-        else {
-            ball->kickleft( );
-        }
-    }
 }
 
 void Player::takeHit( float damage ) {

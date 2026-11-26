@@ -143,8 +143,6 @@ void InGameScene::entry( ) {
 	
 	Camera::setPos( { 0.f, 0.f } );
 	CollisionHandler::checkCollision( ObjectType::Player, ObjectType::Player );
-	CollisionHandler::checkCollision( ObjectType::Player, ObjectType::Ball );
-	CollisionHandler::checkCollision( ObjectType::Ball, ObjectType::GoalPost );
 }
 
 void InGameScene::exit( ) {

@@ -267,6 +267,9 @@ void GameLogic::render( ) {
 		}
 		state.remainTime = Timer::remainTime( );
 		SessionManager::broadcast( &state, sizeof( state ) );
+
+		auto ball = match_.ball( ).getState( );
+		SessionManager::broadcast( &ball, sizeof( ball ) );
 	}
 
 	// 종료 후 준비가 풀린 것도 같이 알림
