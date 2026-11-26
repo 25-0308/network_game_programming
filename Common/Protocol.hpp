@@ -10,12 +10,12 @@ namespace Protocol {
 
 	constexpr std::uint16_t serverPort = 9000;
 	constexpr int maxPlayers = 2;
+	constexpr std::uint16_t maxPacketSize = 64;	// 받을 수 있는 패킷 최대 크기 (서버, 클라 공통)
 
 	enum class PacketType : std::uint8_t {
 		// 클라 -> 서버
 		C2S_SelectCharacter = 1,
 		C2S_Input,
-		C2S_Rematch,
 
 		// 서버 -> 클라
 		S2C_Login = 101,
@@ -96,11 +96,6 @@ namespace Protocol {
 		std::uint8_t keys;		// InputKey 비트
 	};
 
-	// 경기 종료 후 다시 시작
-	struct C2S_Rematch {
-		PacketHeader header{ sizeof( C2S_Rematch ), PacketType::C2S_Rematch };
-	};
-
 	// ---------------- 서버 -> 클라 ----------------
 
 	// 접속한 플레이어 번호
@@ -138,11 +133,10 @@ namespace Protocol {
 		std::uint8_t stunned;	// 1이면 기절
 	};
 
-	// 두 플레이어 상태, 남은 시간, 점수
+	// 두 플레이어 상태, 점수 (남은 시간은 S2C_Frame)
 	struct S2C_GameState {
 		PacketHeader header{ sizeof( S2C_GameState ), PacketType::S2C_GameState };
 		PlayerState players[ maxPlayers ];	// [0] = 1P, [1] = 2P
-		std::uint16_t remainTime;	// 초
 		std::uint8_t scores[ maxPlayers ];
 	};
 
@@ -199,19 +193,21 @@ namespace Protocol {
 	static_assert( sizeof( PacketHeader ) == 3 );
 	static_assert( sizeof( C2S_SelectCharacter ) == 5 );
 	static_assert( sizeof( C2S_Input ) == 4 );
-	static_assert( sizeof( C2S_Rematch ) == 3 );
 	static_assert( sizeof( S2C_Login ) == 4 );
 	static_assert( sizeof( S2C_ChangeScene ) == 3 );
 	static_assert( sizeof( S2C_CharacterSelected ) == 6 );
 	static_assert( sizeof( S2C_GameStart ) == 6 );
 	static_assert( sizeof( PlayerState ) == 11 );
-	static_assert( sizeof( S2C_GameState ) == 29 );
+	static_assert( sizeof( S2C_GameState ) == 27 );
 	static_assert( sizeof( S2C_Ball ) == 19 );
 	static_assert( sizeof( S2C_Goal ) == 5 );
 	static_assert( sizeof( S2C_GameEnd ) == 5 );
 	static_assert( sizeof( S2C_EnemyLeft ) == 3 );
 	static_assert( sizeof( S2C_Frame ) == 17 );
 	static_assert( sizeof( S2C_Collision ) == 14 );
+
+	// 가장 큰 패킷도 maxPacketSize 안에 들어가야 함
+	static_assert( sizeof( S2C_GameState ) <= maxPacketSize );
 
 }	// namespace Protocol
 

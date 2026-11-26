@@ -6,73 +6,60 @@
 namespace ServerGame {
 
     Ball::Ball(float x, float y, float radius)
-        : pos_{x, y}, scale_{radius, radius}, velo_{1.f, -100.f} {}
+        : pos_{x, y}, scale_{radius, radius}, velo_{GameConst::ballStartVx, GameConst::ballStartVy} {}
 
-    float Ball::update(float dt) {
+    void Ball::update(float dt) {
         if (!std::isfinite(dt) || dt <= 0.f) {
-            return 0.f;
+            return;
         }
 
-        velo_.x *= std::pow(0.7f, dt);
-        velo_.y += 1000.f * dt;
+        velo_.x *= std::pow(GameConst::ballFrictionPerSec, dt);
+        velo_.y += GameConst::ballGravity * dt;
         pos_.x += velo_.x * dt;
         pos_.y += velo_.y * dt;
 
-        constexpr float fieldWidth = 1280.f;
-        constexpr float fieldHeight = 650.5f;
-        float impactSpeed = 0.f;
-
-        if (pos_.x - scale_.x <= 0.f) {
-            impactSpeed = std::max(impactSpeed, -velo_.x);
+        // 벽: 공 중심에서 반지름만큼 나간 곳이 경기장 경계에 닿으면 튕김
+        if (pos_.x - scale_.x <= GameConst::fieldLeft) {
             velo_.x = -velo_.x;
-            pos_.x = scale_.x;
+            pos_.x = GameConst::fieldLeft + scale_.x;
         }
-        else if (pos_.x + scale_.x >= fieldWidth) {
-            impactSpeed = std::max(impactSpeed, velo_.x);
+        else if (pos_.x + scale_.x >= GameConst::fieldRight) {
             velo_.x = -velo_.x;
-            pos_.x = fieldWidth - scale_.x;
+            pos_.x = GameConst::fieldRight - scale_.x;
         }
 
-        if (pos_.y - scale_.y <= 10.f) {
-            impactSpeed = std::max(impactSpeed, -velo_.y);
+        if (pos_.y - scale_.y <= GameConst::ballCeilingY) {
             velo_.y = -velo_.y;
-            pos_.y = 20.f + scale_.y;
+            pos_.y = GameConst::ballCeilingResetY + scale_.y;
         }
-        else if (pos_.y + scale_.y >= fieldHeight) {
-            impactSpeed = std::max(impactSpeed, velo_.y);
-            velo_.y = -velo_.y * 0.8f;
-            pos_.y = fieldHeight - scale_.y;
+        else if (pos_.y + scale_.y >= GameConst::ballGroundY) {
+            velo_.y = -velo_.y * GameConst::ballGroundRestitution;
+            pos_.y = GameConst::ballGroundY - scale_.y;
         }
-
-        return impactSpeed;
     }
 
     void Ball::kickleft() {
-        velo_.x -= 2000.f;
-        velo_.y -= 1000.f;
+        velo_.x -= GameConst::ballKickVx;
+        velo_.y += GameConst::ballKickVy;
     }
 
     void Ball::kickright() {
-        velo_.x += 2000.f;
-        velo_.y -= 1000.f;
+        velo_.x += GameConst::ballKickVx;
+        velo_.y += GameConst::ballKickVy;
     }
 
     void Ball::reset(PointFloat pos) {
         pos_ = pos;
-        velo_ = PointFloat(1.f, -100.f);
+        velo_ = PointFloat(GameConst::ballStartVx, GameConst::ballStartVy);
     }
 
-    float Ball::onCollisionEntry(PointFloat finalPos, PointFloat scale, float minPushSpeed) {
-        return onCollision(finalPos, scale, minPushSpeed);
+    void Ball::onCollision(PointFloat finalPos, PointFloat scale, float minPushSpeed) {
+        bounceOffBox(finalPos, scale, minPushSpeed);
     }
 
-    float Ball::onCollision(PointFloat finalPos, PointFloat scale, float minPushSpeed) {
-        return bounceOffBox(finalPos, scale, minPushSpeed);
-    }
-
-    float Ball::bounceOffBox(PointFloat finalPos, PointFloat scale, float minPushSpeed) {
+    void Ball::bounceOffBox(PointFloat finalPos, PointFloat scale, float minPushSpeed) {
         const float radius = scale_.x;
-        const float restitution = 0.8f;
+        const float restitution = GameConst::ballBoxRestitution;
 
         auto boxPos = finalPos;
         auto half = scale / 2.f;
@@ -88,7 +75,7 @@ namespace ServerGame {
         if (dist > 0.f) {
             // 사각형끼리 겹쳐도 실제 공의 원은 꼭짓점에 닿지 않을 수 있다.
             if (dist >= radius) {
-                return 0.f;
+                return;
             }
             normal = normal / dist;
             pos_ += normal * (radius - dist);
@@ -119,27 +106,14 @@ namespace ServerGame {
             }
         }
 
-        float impactSpeed = 0.f;
         float vn = velo_.x * normal.x + velo_.y * normal.y;
         if (vn < 0.f) {
-            impactSpeed = -vn;
             velo_ -= normal * (vn * (1.f + restitution));
             vn = -vn * restitution;
         }
         if (vn < minPushSpeed) {
             velo_ += normal * (minPushSpeed - vn);
         }
-
-        return impactSpeed;
-    }
-
-    void Ball::setPosition(float x, float y) {
-        pos_.x = x;
-        pos_.y = y;
-    }
-
-    void Ball::setVelocity(float vx, float vy) {
-        velo_ = PointFloat(vx, vy);
     }
 
     Protocol::S2C_Ball Ball::getState() const {

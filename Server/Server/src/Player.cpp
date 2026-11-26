@@ -203,7 +203,7 @@ void Player::moveHorizontal( Protocol::InputKey key, float dir,
 }
 
 void Player::clampToField( ) {
-	// 클라 Player는 scale_이 (0, 0)이라 중심 x가 그대로 벽에 걸림
+	// 몸통 폭은 따지지 않고 중심 x가 경기장 경계에 걸림 (원래 게임과 같음)
 	if ( pos_.x <= GameConst::fieldLeft ) {
 		pos_.x = GameConst::fieldLeft;
 	}

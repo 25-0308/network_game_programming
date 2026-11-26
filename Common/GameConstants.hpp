@@ -14,9 +14,6 @@ namespace GameConst {
 
 	// ---------------- 화면, 경기장 ----------------
 
-	constexpr float screenWidth = 1280.f;
-	constexpr float screenHeight = 720.f;
-
 	// 플레이어와 공이 벽에 막히는 좌우 경계
 	constexpr float fieldLeft = 0.f;
 	constexpr float fieldRight = 1280.f;

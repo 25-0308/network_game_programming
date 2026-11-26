@@ -40,15 +40,6 @@ public:
 		}
 	}
 
-	void load( const std::string& filePath, bool premultipliedAlpha ) {
-		auto path = fs::path( filePath ).wstring( );	// ANSI(CP949) -> UTF-16, non-ASCII path safe
-		image_.Load( path.c_str( ) );
-
-		if ( !image_.IsNull( ) && premultipliedAlpha ) {
-			setPremultipliedAlpha( );
-		}
-	}
-
 	void draw( HDC hdc, const PointFloat& objPos ) {
 		image_.Draw( hdc,
 			static_cast<int>( objPos.x - image_.GetWidth( ) / 2.f ),

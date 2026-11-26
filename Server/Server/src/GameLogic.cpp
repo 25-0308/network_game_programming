@@ -181,14 +181,6 @@ void GameLogic::onPacket( std::uint8_t playerNum, const char* data, int size ) {
 		}
 		return;
 	}
-	case Protocol::PacketType::C2S_Rematch: {
-		if ( asPacket<Protocol::C2S_Rematch>( data, size ) == nullptr ) {
-			break;
-		}
-		// 경기가 끝나면 선택 단계로 돌아가므로, 다시 준비하면 재경기
-		std::cout << "플레이어 " << static_cast<int>( playerNum ) << " 재시작 요청\n";
-		return;
-	}
 	default:
 		break;
 	}
@@ -308,7 +300,6 @@ void GameLogic::render( ) {
 			state.players[ i ] = match_.player( static_cast<std::uint8_t>( i + 1 ) ).toState( );
 			state.scores[ i ] = scores_[ i ];
 		}
-		state.remainTime = Timer::remainTime( );
 		SessionManager::broadcast( &state, sizeof( state ) );
 
 		auto ball = match_.ball( ).getState( );

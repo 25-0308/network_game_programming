@@ -66,12 +66,6 @@
     <ClInclude Include="include\Animator.hpp">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="include\Collider.hpp">
-      <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="include\CollisionHandler.hpp">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="include\EventHandler.hpp">
       <Filter>include</Filter>
     </ClInclude>
@@ -121,9 +115,6 @@
     <ClInclude Include="include\ImageStorage.hpp">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="include\StageScene.hpp">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="include\CharacterInfo.hpp">
       <Filter>include</Filter>
     </ClInclude>
@@ -171,12 +162,6 @@
     <ClCompile Include="src\Animator.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\Collider.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="src\CollisionHandler.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="src\EventHandler.cpp">
       <Filter>src</Filter>
     </ClCompile>
@@ -214,9 +199,6 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\ImageStorage.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="src\StageScene.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\Stopwatch.cpp">

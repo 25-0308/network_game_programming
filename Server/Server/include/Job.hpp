@@ -13,7 +13,7 @@ enum class JobType : std::uint8_t {
 struct Job {
 	JobType type;
 	std::uint8_t playerNum;	// 1 또는 2
-	std::array<char, maxPacketSize> data;	// Packet일 때 패킷 전체 (헤더 포함)
+	std::array<char, Protocol::maxPacketSize> data;	// Packet일 때 패킷 전체 (헤더 포함)
 	int size;
 };
 

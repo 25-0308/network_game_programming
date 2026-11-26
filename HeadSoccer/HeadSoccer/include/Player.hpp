@@ -5,25 +5,24 @@
 #include <string>
 #include "Resourcehandler.hpp"
 #include "../../../Common/Protocol.hpp"
+#include "GameConstants.hpp"
 #include <optional>
 
 class Player : public Object
 {
 public:
-	// ss(속도), js(점프) 스탯은 서버 Player가 이동 계산에 씀 (클라는 S2C_GameState 위치만 받음)
-	// ks(발차기) 스탯은 서버 Player가 피격 데미지 계산에 씀 (클라는 S2C_GameState HP만 받음)
-	Player(const std::string& name, [[maybe_unused]] int ss, [[maybe_unused]] int ks, [[maybe_unused]] int js, const std::string& lr,int num)
+	// 스탯, 위치, HP는 서버 Player가 계산하고 S2C_GameState로 받음
+	Player( const std::string& name, const std::string& lr, int num )
 		: characterName_{ name } {
 		auto filePath = fs::path( "assets/" + name + "_player_" + lr + ".png" );
 		auto keyVal = name + "_player_" + lr;
 		image_ = ResourceHandler::loadImage( keyVal, fs::canonical( filePath ).string( ), true );
 
 		// 첫 S2C_GameState를 받기 전까지 보여 줄 값 (HP, 기절은 서버 값으로 덮음)
-		hp_ = maxHp;
+		hp_ = GameConst::playerMaxHp;
 		stunned_ = false;
 		kickCooldown_ = 0.0f;
 		kickAnimT_ = 0.0f;
-
 
 		createAnimator( );
 		if ( lr == "left" ) {
@@ -45,7 +44,7 @@ public:
 			auto kickAnimImage = ResourceHandler::loadImage( "player_kick_left", fs::canonical( kickAnimFilePath ).string( ), true );
 
 			getAnimator( )->createAnimation( "player_kick_left", kickAnimImage, PointFloat( 0.f, 0.f ),
-				PointFloat( 123.f, 61.f ), PointFloat( 123.f, 0.f ), kickFrameCnt, kickFrameTime, PointFloat( 0.f, 45.f ) );
+				PointFloat( 123.f, 61.f ), PointFloat( 123.f, 0.f ), GameConst::kickFrameCnt, GameConst::kickFrameTime, PointFloat( 0.f, 45.f ) );
 
 			getAnimator( )->play( "player_idle_left" );
 		}
@@ -68,15 +67,10 @@ public:
 			auto kickAnimImage = ResourceHandler::loadImage( "player_kick_right", fs::canonical( kickAnimFilePath ).string( ), true );
 
 			getAnimator( )->createAnimation( "player_kick_right", kickAnimImage, PointFloat( 0.f, 0.f ),
-				PointFloat( 123.f, 61.f ), PointFloat( 123.f, 0.f ), kickFrameCnt, kickFrameTime, PointFloat( 0.f, 45.f ) );
+				PointFloat( 123.f, 61.f ), PointFloat( 123.f, 0.f ), GameConst::kickFrameCnt, GameConst::kickFrameTime, PointFloat( 0.f, 45.f ) );
 
 			getAnimator( )->play( "player_idle_right" );
 		}
-
-
-		createCollider( );
-		getCollider( )->setScale( PointFloat( 70.f, 90.f ) );
-		getCollider( )->setOffset( PointFloat( 0.f, 15.f ) );
 
 		pnum_ = num;
 	}
@@ -85,9 +79,6 @@ public:
 	// S2C_GameState로 받은 서버 상태(위치, HP, 기절, 애니메이션) 적용
 	void update( const Protocol::PlayerState& state );
 	void render(HDC hdc)override;
-
-	void onCollisionEntry( Object* other ) override;
-	void onCollisionExit( Object* other ) override;
 
 	void kick();
 
@@ -107,12 +98,7 @@ public:
 	// 키 입력과 이동 계산 없이 서버 상태만 보여 줌
 	bool isRemote( ) const;
 
-	static constexpr float maxHp = 100.f;
-	static constexpr float kickCooldownTime = 0.5f;
 
-	// player_kick_*.png has 8 frames of 123x61
-	static constexpr std::uint8_t kickFrameCnt = 8;
-	static constexpr float kickFrameTime = 0.03f;
 
 	// back to the kickoff position with no kick in progress
 	// (점프, 대시 상태는 서버 Player::resetToKickoff가 초기화)
@@ -127,7 +113,6 @@ public:
 		kickCooldown_ = 0.0f;
 		kickAnimT_ = 0.0f;
 		getAnimator( )->play( idleAnimName( ) );
-		getCollider( )->update( pos_ );
 	}
 
 private:
@@ -186,4 +171,3 @@ private:
 };
 
 #endif	// __player_hpp
-

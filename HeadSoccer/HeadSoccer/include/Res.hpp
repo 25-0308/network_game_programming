@@ -10,9 +10,6 @@ public:
 
 	virtual ~Resource( ) = 0 {}
 
-	void setKey( const std::string& key ) { key_ = key; }
-	const std::string& getKey( ) const { return key_; }
-
 private:
 	std::string key_;
 

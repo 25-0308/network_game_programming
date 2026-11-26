@@ -3,9 +3,9 @@
 #include "../include/Timer.hpp"
 #include "../include/Camera.hpp"
 
-Stopwatch::Stopwatch( PointFloat pos, std::uint16_t time )
+Stopwatch::Stopwatch( PointFloat pos )
 	: Object( "Stopwatch", pos, PointFloat( ) ),
-	digits( ), time_{ time } {
+	digits( ) {
 	digits.reserve( 10 );
 	for ( auto i = 0; i < 10; ++i ) {
 		auto fileName = std::to_string( i ) + ".png";
@@ -17,14 +17,10 @@ Stopwatch::Stopwatch( PointFloat pos, std::uint16_t time )
 	}
 }
 
-void Stopwatch::update( ) {
-	time_ = Timer::remainTime( );
-	// 결과 화면 전환은 S2C_GameEnd를 받았을 때 Game::finishMatch에서 함
-}
-
 void Stopwatch::render( HDC hdc ) {
-	auto minutes = time_ / 60;
-	auto seconds = time_ % 60;
+	const auto time = Timer::remainTime( );
+	auto minutes = time / 60;
+	auto seconds = time % 60;
 
 	auto relativePos = pos_ - Camera::getPos( );
 

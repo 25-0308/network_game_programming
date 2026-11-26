@@ -5,7 +5,6 @@
 #include "../include/SceneHandler.hpp"
 #include "../include/EventHandler.hpp"
 #include "../include/ResourceHandler.hpp"
-#include "../include/CollisionHandler.hpp"
 #include "../include/SoundHandler.hpp"
 #include "../include/Player.hpp"
 #include "../include/Ball.hpp"
@@ -34,9 +33,6 @@ bool Game::init( HWND hWnd, POINT rsl, const wchar_t* serverIp ) {
 
 	hDC_ = GetDC( hWnd_ );
 	rsl_ = rsl;
-
-	clientWidth_ = static_cast<std::uint16_t>( rsl_.x );
-	clientHeight_ = static_cast<std::uint16_t>( rsl_.y );
 
 	auto winRt = RECT{
 		.left = 0,
@@ -107,7 +103,6 @@ void Game::step( ) {
 	sendInput( );
 
 	SceneHandler::update( );
-	CollisionHandler::update( );
 
 	EventHandler::update( );
 }
@@ -270,14 +265,10 @@ void Game::startMatch( const Protocol::S2C_GameStart& start ) {
 		return;
 	}
 
-	constexpr const char* names[] = { "america", "argentina", "france", "korea" };
-	constexpr const char* flags[] = { "a_flag.png", "ag_flag.png", "f_flag.png", "k_flag.png" };
 	auto setCharacter = [&]( CharacterInfo& info, Protocol::Character character, const char* side ) {
 		auto index = static_cast<std::size_t>( character );
-		const auto& stats = GameConst::statOf( character );
-		info.setImage( std::string( names[ index ] ) + "_" + side + ".png" );
-		info.setFlag( flags[ index ] );
-		info.setStats( stats.speed, stats.kick, stats.jump );
+		info.setImage( std::string( characterNames[ index ] ) + "_" + side + ".png" );
+		info.setFlag( characterFlags[ index ] );
 	};
 	setCharacter( player1, start.p1Character, "left" );
 	setCharacter( player2, start.p2Character, "right" );
@@ -394,9 +385,6 @@ void Game::applyPlayerStates( const Protocol::S2C_GameState& state ) {
 HWND Game::hWnd_;
 HDC Game::hDC_;
 POINT Game::rsl_;
-
-std::uint16_t Game::clientWidth_;
-std::uint16_t Game::clientHeight_;
 
 HDC Game::memDC_;
 HBITMAP Game::memBmp_;

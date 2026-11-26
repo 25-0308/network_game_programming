@@ -5,15 +5,8 @@
 #include "../include/InputHandler.hpp"
 #include "../include/Camera.hpp"
 #include "../include/SceneHandler.hpp"
-#include "../include/CharacterInfo.hpp"
 #include "../include/ImageStorage.hpp"
 #include "../include/Game.hpp"
-
-//#include <iostream>
-extern StageNumber stageNum;
-
-extern CharacterInfo player1;
-extern CharacterInfo player2;
 
 Button::Button( const std::string& key, const std::string& fileName, bool premultipliedAlpha )
 	: bMouseOn_{ false }, bLbtnDown_{ false }
@@ -159,82 +152,6 @@ void Button::mouseLbtnClicked( ) {
 	else if ( name == "character_next_button" ) {
 		Game::toggleReady( );
 	}
-	else if ( name == "mini_stage1" ) {
-		imageOff_ = imageOn_;
-		stageNum = StageNumber::Stage1;
-
-		auto btnGroup = SceneHandler::getCurrScene( )->getGroup( ObjectType::Button );
-		for ( auto btn : btnGroup ) {
-			if ( btn->getName( ) == "mini_stage2" || btn->getName( ) == "mini_stage3"
-				|| btn->getName( ) == "mini_stage4" 
-				) {
-				static_cast<Button*>( btn )->resetImageState( );
-			}
-		}
-	}
-	else if ( name == "mini_stage2" ) {
-		imageOff_ = imageOn_;
-		stageNum = StageNumber::Stage2;
-
-		auto btnGroup = SceneHandler::getCurrScene( )->getGroup( ObjectType::Button );
-		for ( auto btn : btnGroup ) {
-			if ( btn->getName( ) == "mini_stage1" || btn->getName( ) == "mini_stage3"
-				|| btn->getName( ) == "mini_stage4"
-				) {
-				static_cast<Button*>( btn )->resetImageState( );
-			}
-		}
-	}
-	else if ( name == "mini_stage3" ) {
-		imageOff_ = imageOn_;
-		stageNum = StageNumber::Stage3;
-
-		auto btnGroup = SceneHandler::getCurrScene( )->getGroup( ObjectType::Button );
-		for ( auto btn : btnGroup ) {
-			if ( btn->getName( ) == "mini_stage1" || btn->getName( ) == "mini_stage2"
-				|| btn->getName( ) == "mini_stage4"
-				) {
-				static_cast<Button*>( btn )->resetImageState( );
-			}
-		}
-	}
-	else if ( name == "mini_stage4" ) {
-		imageOff_ = imageOn_;
-		stageNum = StageNumber::Stage4;
-
-		auto btnGroup = SceneHandler::getCurrScene( )->getGroup( ObjectType::Button );
-		for ( auto btn : btnGroup ) {
-			if ( btn->getName( ) == "mini_stage1" || btn->getName( ) == "mini_stage2"
-				|| btn->getName( ) == "mini_stage3"
-				) {
-				static_cast<Button*>( btn )->resetImageState( );
-			}
-		}
-	}
-	else if ( name == "stage_back_button" ) {
-		stageNum = StageNumber::None;
-
-		EventHandler::addEvent(
-			Event{
-				.type = EventType::ChangeScene,
-				.wParam = static_cast<DWORD_PTR>( SceneType::SelectCharacter )
-			}
-		);
-	}
-	else if ( name == "stage_play_button" ) {
-		if ( stageNum == StageNumber::None ) {
-			return;
-		}
-
-		EventHandler::addEvent(
-			Event{
-				.type = EventType::ChangeScene,
-				.wParam = static_cast<DWORD_PTR>( SceneType::InGame )
-			}
-		);
-	}
-
-	//std::cout << "stageNum: " << static_cast<int>( stageNum ) << std::endl;
 }
 
 void Button::resetImageState( ) {

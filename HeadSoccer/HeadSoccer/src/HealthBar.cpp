@@ -2,6 +2,7 @@
 #include "../include/Player.hpp"
 #include "../include/Camera.hpp"
 #include "../include/Timer.hpp"
+#include "../include/Game.hpp"
 
 #include <numbers>
 
@@ -10,7 +11,6 @@ namespace {
 	constexpr int barHeight = 24;
 	constexpr int barMargin = 40;
 	constexpr int barTop = 30;
-	constexpr int screenWidth = 1280;
 
 	constexpr int starCount = 3;
 	constexpr float starSpinSpeed = 4.f;	// radians per second
@@ -46,12 +46,12 @@ void HealthBar::update( ) {
 }
 
 void HealthBar::render( HDC hdc ) {
-	auto left = rightSide_ ? screenWidth - barMargin - barWidth : barMargin;
+	auto left = rightSide_ ? Game::getRsl( ).x - barMargin - barWidth : barMargin;
 	auto bar = RECT{ left, barTop, left + barWidth, barTop + barHeight };
 	FillRect( hdc, &bar, bgBrush_ );
 
 	// the bar drains toward the outer edge of the screen
-	auto ratio = player_->getHp( ) / Player::maxHp;
+	auto ratio = player_->getHp( ) / GameConst::playerMaxHp;
 	auto fillWidth = static_cast<LONG>( barWidth * ratio );
 	auto fill = bar;
 	if ( rightSide_ ) {

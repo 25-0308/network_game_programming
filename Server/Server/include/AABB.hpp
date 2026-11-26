@@ -28,13 +28,6 @@ struct AABB {
 		return center.y + size.y / 2.f;
 	}
 
-	// CollisionHandler::isCollided와 같은 판정 (변이 맞닿기만 하면 충돌 아님)
-	constexpr bool overlaps( const AABB& other ) const {
-		auto d = other.center - center;
-		auto reach = ( size + other.size ) / 2.f;
-		return absf( d.x ) < reach.x && absf( d.y ) < reach.y;
-	}
-
 	// 축마다 겹친 길이, 둘 다 0보다 크면 겹친 상태 (Player::separateFrom에서 사용)
 	constexpr Vec2 overlapAmount( const AABB& other ) const {
 		auto d = other.center - center;
@@ -45,10 +38,6 @@ struct AABB {
 	// 박스 안에서 p와 가장 가까운 점 (발차기 거리, 공과 박스 충돌에서 사용)
 	constexpr Vec2 closestPoint( Vec2 p ) const {
 		return { std::clamp( p.x, left( ), right( ) ), std::clamp( p.y, top( ), bottom( ) ) };
-	}
-
-	constexpr bool contains( Vec2 p ) const {
-		return p.x >= left( ) && p.x <= right( ) && p.y >= top( ) && p.y <= bottom( );
 	}
 
 	// p에서 박스까지 거리 (안에 있으면 0)

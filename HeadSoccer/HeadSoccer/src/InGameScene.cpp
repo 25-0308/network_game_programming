@@ -5,12 +5,13 @@
 #include "../include/CharacterInfo.hpp"
 #include "../include/Stopwatch.hpp"
 #include "../include/Player.hpp"
-#include "../include/CollisionHandler.hpp"
 #include "../include/Ball.hpp"
 #include "../include/GoalManager.hpp"
 #include "../include/HealthBar.hpp"
+#include "GameConstants.hpp"
 
-extern StageNumber stageNum;
+// 경기장 번호 (S2C_GameStart로 서버가 정함)
+StageNumber stageNum = StageNumber::None;
 extern CharacterInfo player1;
 extern CharacterInfo player2;
 
@@ -42,7 +43,7 @@ void InGameScene::entry( ) {
 	timeUi->setPos( PointFloat( 640.f, 60.f ) );
 	addObject( ObjectType::TimeUI, timeUi );
 
-	auto stopwatch = new Stopwatch( PointFloat( 640.f, 80.f ), 120 );
+	auto stopwatch = new Stopwatch( PointFloat( 640.f, 80.f ) );
 	stopwatch->setName( "stopwatch" );
 	addObject( ObjectType::TimeUI, stopwatch );
 
@@ -54,10 +55,9 @@ void InGameScene::entry( ) {
 		}
 		temp.push_back( c );
 	}
-	auto p1 = new Player( temp, player1.getSpeedStat(), player1.getKickStat(),
-		player1.getJumpStat(), "left",1);
+	auto p1 = new Player( temp, "left", 1 );
 	p1->setName("player1");
-	p1->setPos(PointFloat(300.f, 500.f));
+	p1->setPos( PointFloat( GameConst::p1StartX, GameConst::p1StartY ) );
 	addObject(ObjectType::Player, p1);
 
 	auto p1ImageName2 = player2.getImage();
@@ -68,10 +68,9 @@ void InGameScene::entry( ) {
 		}
 		temp2.push_back(c);
 	}
-	auto p2 = new Player(temp2, player2.getSpeedStat(), player2.getKickStat(),
-		player2.getJumpStat(), "right",2);
+	auto p2 = new Player( temp2, "right", 2 );
 	p2->setName("player2");
-	p2->setPos(PointFloat(980.f, 500.f));
+	p2->setPos( PointFloat( GameConst::p2StartX, GameConst::p2StartY ) );
 	addObject(ObjectType::Player, p2);
 
 	auto p1HealthBar = new HealthBar( p1, false );
@@ -84,7 +83,7 @@ void InGameScene::entry( ) {
 
 	auto ball = new Ball("ball");
 	ball->setName("ball");
-	ball->setPos(PointFloat(640.f, 360.f));
+	ball->setPos( PointFloat( GameConst::ballStartX, GameConst::ballStartY ) );
 	addObject(ObjectType::Ball, ball);
 
 	auto p1Flag = player1.getFlag( );
@@ -128,25 +127,17 @@ void InGameScene::entry( ) {
 	auto leftGoalPost = new Background( "goalpost_left", "goalpost_left.png", true );
 	leftGoalPost->setName( "goalpost_left" );
 	leftGoalPost->setPos( PointFloat( -20.f, 550.f ) );
-	leftGoalPost->createCollider( );
-	leftGoalPost->getCollider( )->setScale( PointFloat( 70.f, 30.f ) );
-	leftGoalPost->getCollider( )->setOffset( PointFloat( 55.f, -160.f ) );
 	addObject( ObjectType::GoalPost, leftGoalPost );
 
 	auto rightGoalPost = new Background( "goalpost_right", "goalpost_right.png", true );
 	rightGoalPost->setName( "goalpost_right" );
 	rightGoalPost->setPos( PointFloat( 1300.f, 550.f ) );
-	rightGoalPost->createCollider( );
-	rightGoalPost->getCollider( )->setScale( PointFloat( 70.f, 30.f ) );
-	rightGoalPost->getCollider( )->setOffset( PointFloat( -55.f, -160.f ) );
 	addObject( ObjectType::GoalPost, rightGoalPost );
 	
 	Camera::setPos( { 0.f, 0.f } );
-	// Player끼리, Player-공, 공-골대 충돌은 모두 서버가 판정하므로 등록하지 않음
+	// 충돌 판정은 모두 서버가 함 (결과는 S2C_GameState, S2C_Ball로 받음)
 }
 
 void InGameScene::exit( ) {
-	// checkCollision toggles bits, so clear them or the next match turns collisions off
-	CollisionHandler::reset( );
 	Scene::destroyObjGroups( );
 }

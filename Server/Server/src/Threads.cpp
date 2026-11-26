@@ -34,7 +34,7 @@ bool receivePlayerPacket( std::uint8_t playerNum, SOCKET sock ) {
 		return !isRunning( ) || SessionManager::shouldStop( playerNum );
 	};
 
-	job.size = Network::recvPacket( sock, job.data.data( ), maxPacketSize, shouldStop );
+	job.size = Network::recvPacket( sock, job.data.data( ), Protocol::maxPacketSize, shouldStop );
 	if ( job.size < 0 ) {
 		job.type = JobType::PlayerLeave;
 		GameLogic::pushJob( job );

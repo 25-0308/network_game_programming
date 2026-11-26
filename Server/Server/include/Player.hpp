@@ -121,9 +121,6 @@ public:
 	float speed( ) const {
 		return speed_;
 	}
-	float jumpPower( ) const {
-		return jumpPower_;
-	}
 	float kickDamage( ) const {
 		return kickDamage_;
 	}

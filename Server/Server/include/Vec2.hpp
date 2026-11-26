@@ -41,12 +41,6 @@ struct Vec2 {
 
 	constexpr bool operator==( const Vec2& ) const = default;
 
-	constexpr float dot( Vec2 rhs ) const {
-		return x * rhs.x + y * rhs.y;
-	}
-	constexpr float lengthSq( ) const {
-		return x * x + y * y;
-	}
 	float length( ) const {
 		return std::hypot( x, y );
 	}

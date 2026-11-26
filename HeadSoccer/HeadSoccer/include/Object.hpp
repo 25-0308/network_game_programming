@@ -3,7 +3,6 @@
 
 #include "common.hpp"
 #include "Animator.hpp"
-#include "Collider.hpp"
 
 class Object {
 public:
@@ -18,7 +17,6 @@ public:
 
 	virtual ~Object( ) = 0 {
 		delete animator_;
-		delete collider_;
 	}
 
 	virtual void update( ) {}
@@ -28,29 +26,16 @@ public:
 		if ( animator_ ) {
 			animator_->update( );
 		}
-		if ( collider_ ) {
-			collider_->update( pos_ );
-		}
 	}
 
 	virtual void componentRender( HDC hdc ) final {
 		if ( animator_ ) {
 			animator_->render( hdc, pos_ );
 		}
-		/*if ( collider_ ) {
-			collider_->render( hdc );
-		}*/
 	}
-
-	virtual void onCollision( Object* other ) {}
-	virtual void onCollisionEntry( Object* other ) {}
-	virtual void onCollisionExit( Object* other ) {}
 
 	void createAnimator( ) {
 		animator_ = new Animator( );
-	}
-	void createCollider( ) {
-		collider_ = new Collider( );
 	}
 
 	void setName( const std::string& name ) {
@@ -61,9 +46,6 @@ public:
 	}
 	void setScale( const PointFloat& scale ) {
 		scale_ = scale;
-	}
-	void setAlive( bool alive ) {
-		alive_ = alive;
 	}
 
 	const std::string& getName( ) const {
@@ -82,9 +64,6 @@ public:
 	Animator* getAnimator( ) const {
 		return animator_;
 	}
-	Collider* getCollider( ) const {
-		return collider_;
-	}
 
 private:
 	std::string name_;
@@ -97,7 +76,6 @@ private:
 	bool alive_;
 
 	Animator* animator_;
-	Collider* collider_;
 };
 
 #endif	// __object_hpp

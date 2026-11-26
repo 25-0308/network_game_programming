@@ -121,14 +121,14 @@ void Player::kick( ) {
     if ( kickCooldown_ > 0.f ) {
         return;
     }
-    kickCooldown_ = kickCooldownTime;
+    kickCooldown_ = GameConst::kickCooldown;
     startKick( );
 }
 
 void Player::startKick( ) {
     SoundHandler::playEffect( SoundEffect::PlayerKick );
 
-    kickAnimT_ = kickFrameCnt * kickFrameTime;
+    kickAnimT_ = GameConst::kickAnimTime;
     getAnimator( )->playFromStart( kickAnimName( ) );
 
     // 상대 피격(HP 감소, 기절)과 공 차기는 서버가 판정해서 S2C_GameState, S2C_Ball로 옴
@@ -156,8 +156,6 @@ void Player::update( const Protocol::PlayerState& state ) {
 
     applyServerAnim( state.anim );
 
-    // 애니메이션은 S2C_Frame마다 update( )에서 진행하므로 여기서는 충돌 박스만 옮김
-    getCollider( )->update( pos_ );
 }
 
 void Player::applyServerAnim( Protocol::PlayerAnim anim ) {
@@ -184,7 +182,7 @@ void Player::applyServerAnim( Protocol::PlayerAnim anim ) {
     if ( kickStarted ) {
         // 쿨타임이 남아 있으면 이미 직접 찬 발차기, 없으면 내 쪽에서 놓친 발차기라 지금 시작
         if ( kickCooldown_ <= 0.f ) {
-            kickCooldown_ = kickCooldownTime;
+            kickCooldown_ = GameConst::kickCooldown;
             startKick( );
         }
     }
@@ -201,14 +199,4 @@ void Player::render( HDC hdc ) {
     if ( image_ ) {
         image_->draw( hdc, relativePos );
     }
-}
-
-// Player끼리 밀어내기(separateFrom)는 서버 Match::tick이 하고 위치만 S2C_GameState로 받음
-// 남은 충돌은 Player-Ball 하나라 충돌 박스 표시용 카운트만 셈 (공 쪽 반응은 Ball이 처리)
-void Player::onCollisionEntry( Object* other ) {
-    getCollider( )->addCollCnt( );
-}
-
-void Player::onCollisionExit( Object* other ) {
-	getCollider( )->subCollCnt( );
 }

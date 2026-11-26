@@ -43,9 +43,6 @@ private:
 	static HDC hDC_;
 	static POINT rsl_;
 
-	static std::uint16_t clientWidth_;
-	static std::uint16_t clientHeight_;
-
 	static HDC memDC_;
 	static HBITMAP memBmp_;
 

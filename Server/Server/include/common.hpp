@@ -16,9 +16,6 @@
 #include "Protocol.hpp"
 #include "GameConstants.hpp"
 
-// 받을 수 있는 패킷 최대 크기 (가장 큰 패킷보다 넉넉하게)
-constexpr int maxPacketSize = 64;
-
 // 수신 스레드가 recv 전에 한 번에 기다리는 시간 (ms)
 // 이 간격마다 멈추라는 요청(끊기, 서버 종료)을 확인하므로, 스레드는 이 시간 안에 끝남
 constexpr long recvPollMs = 200;

@@ -46,7 +46,6 @@ enum class ObjectType {
 enum class SceneType {
 	Title,
 	SelectCharacter,
-	SelectStage,
 	InGame,
 	Result,
 

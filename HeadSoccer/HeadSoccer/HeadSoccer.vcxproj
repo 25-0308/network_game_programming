@@ -165,8 +165,6 @@
     <ClInclude Include="include\Camera.hpp" />
     <ClInclude Include="include\CharacterScene.hpp" />
     <ClInclude Include="include\ClientNetwork.hpp" />
-    <ClInclude Include="include\Collider.hpp" />
-    <ClInclude Include="include\CollisionHandler.hpp" />
     <ClInclude Include="include\common.hpp" />
     <ClInclude Include="include\EventHandler.hpp" />
     <ClInclude Include="include\Game.hpp" />
@@ -184,7 +182,6 @@
     <ClInclude Include="include\Scene.hpp" />
     <ClInclude Include="include\SceneHandler.hpp" />
     <ClInclude Include="include\SoundHandler.hpp" />
-    <ClInclude Include="include\StageScene.hpp" />
     <ClInclude Include="include\Stopwatch.hpp" />
     <ClInclude Include="include\TextLabel.hpp" />
     <ClInclude Include="include\Timer.hpp" />
@@ -205,8 +202,6 @@
     <ClCompile Include="src\Camera.cpp" />
     <ClCompile Include="src\CharacterScene.cpp" />
     <ClCompile Include="src\ClientNetwork.cpp" />
-    <ClCompile Include="src\Collider.cpp" />
-    <ClCompile Include="src\CollisionHandler.cpp" />
     <ClCompile Include="src\EventHandler.cpp" />
     <ClCompile Include="src\Game.cpp" />
     <ClCompile Include="src\GoalManager.cpp" />
@@ -222,7 +217,6 @@
     <ClCompile Include="src\Miniaudio.cpp">
       <WarningLevel>TurnOffAllWarnings</WarningLevel>
     </ClCompile>
-    <ClCompile Include="src\StageScene.cpp" />
     <ClCompile Include="src\Stopwatch.cpp" />
     <ClCompile Include="src\TextLabel.cpp" />
     <ClCompile Include="src\Timer.cpp" />

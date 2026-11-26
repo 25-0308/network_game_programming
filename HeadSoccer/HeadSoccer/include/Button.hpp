@@ -16,8 +16,6 @@ public:
 
 	bool mouseOnCheck( );
 
-	void mouseOn( ) {}
-	void mouseLbtnUp( ) {}
 	void mouseLbtnClicked( );
 
 	void resetImageState( );

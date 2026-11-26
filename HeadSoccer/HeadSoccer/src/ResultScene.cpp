@@ -45,8 +45,7 @@ void ResultScene::entry( ) {
 		}
 		temp.push_back( c );
 	}
-	auto p1 = new Player( temp, player1.getSpeedStat( ),
-		player1.getKickStat( ), player1.getJumpStat( ), "left", 1 );
+	auto p1 = new Player( temp, "left", 1 );
 	p1->setName( "player1" );
 	p1->setPos( PointFloat( 300.f, 350.f ) );
 	addObject( ObjectType::Player, p1 );
@@ -59,8 +58,7 @@ void ResultScene::entry( ) {
 		}
 		temp2.push_back( c );
 	}
-	auto p2 = new Player( temp2, player2.getSpeedStat( ),
-		player2.getKickStat( ), player2.getJumpStat( ), "right", 2 );
+	auto p2 = new Player( temp2, "right", 2 );
 	p2->setName( "player2" );
 	p2->setPos( PointFloat( 980.f, 350.f ) );
 	addObject( ObjectType::Player, p2 );

@@ -6,24 +6,12 @@
 #include "../include/Player.hpp"
 #include "../include/TextLabel.hpp"
 #include "../include/SoundHandler.hpp"
+#include "GameConstants.hpp"
 
 #pragma comment( lib, "msimg32" )
 
 extern int p1GoalScore;
 extern int p2GoalScore;
-
-namespace {
-	constexpr float goalScreenTime = 3.f;
-
-	// the ball is in once its center is past the goal line and under the crossbar
-	constexpr float leftGoalLine = 50.f;
-	constexpr float rightGoalLine = 1230.f;
-	constexpr float crossbarBottom = 420.f;
-
-	// same as the spawn positions in InGameScene::entry
-	const PointFloat p1StartPos( 300.f, 500.f );
-	const PointFloat p2StartPos( 980.f, 500.f );
-}
 
 GoalManager::GoalManager( )
 	: Object( "goal_manager", PointFloat( ), PointFloat( ) ),
@@ -62,7 +50,7 @@ void GoalManager::update( ) {
 	// play goes on during the goal screen, but no new goal is counted until kickoff
 	if ( celebrating_ ) {
 		celebrateT_ += Timer::fdt( );
-		if ( celebrateT_ >= goalScreenTime ) {
+		if ( celebrateT_ >= GameConst::goalScreenTime ) {
 			kickoff( );
 		}
 		return;
@@ -70,16 +58,16 @@ void GoalManager::update( ) {
 
 	for ( Object* ball : SceneHandler::getCurrScene( )->getGroup( ObjectType::Ball ) ) {
 		auto pos = ball->getPos( );
-		if ( pos.y < crossbarBottom ) {
+		if ( pos.y < GameConst::crossbarBottom ) {
 			continue;
 		}
 
 		// player2 attacks the left goal, player1 the right one
-		if ( pos.x <= leftGoalLine ) {
+		if ( pos.x <= GameConst::leftGoalLine ) {
 			scoreGoal( 2 );
 			return;
 		}
-		if ( pos.x >= rightGoalLine ) {
+		if ( pos.x >= GameConst::rightGoalLine ) {
 			scoreGoal( 1 );
 			return;
 		}
@@ -121,10 +109,11 @@ void GoalManager::scoreGoal( int scorer ) {
 void GoalManager::kickoff( ) {
 	auto currScene = SceneHandler::getCurrScene( );
 
-
 	for ( Object* obj : currScene->getGroup( ObjectType::Player ) ) {
 		auto player = static_cast<Player*>( obj );
-		player->reset( player->getName( ) == "player1" ? p1StartPos : p2StartPos );
+		player->reset( player->getName( ) == "player1"
+			? PointFloat( GameConst::p1StartX, GameConst::p1StartY )
+			: PointFloat( GameConst::p2StartX, GameConst::p2StartY ) );
 	}
 
 	celebrating_ = false;

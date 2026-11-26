@@ -6,8 +6,6 @@
 #pragma comment( lib, "ws2_32" )
 
 namespace {
-	// 받을 수 있는 패킷 최대 크기
-	constexpr std::uint16_t maxPacketSize = 64;
 
 	// 서버가 보내는 패킷의 정해진 크기, 모르는 타입은 0 (헤더의 size만 보고 건너뜀)
 	constexpr std::uint16_t expectedSize( Protocol::PacketType type ) {
@@ -102,7 +100,7 @@ bool ClientNetwork::poll( ) {
 		auto header = Protocol::PacketHeader{ };
 		std::memcpy( &header, recvBuf_.data( ) + offset, headerSize );
 
-		if ( header.size < headerSize || header.size > maxPacketSize ) {
+		if ( header.size < headerSize || header.size > Protocol::maxPacketSize ) {
 			std::printf( "잘못된 패킷 크기: %u (type %u)\n", header.size, static_cast<unsigned>( header.type ) );
 			return false;
 		}

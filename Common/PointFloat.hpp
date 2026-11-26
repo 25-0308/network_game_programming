@@ -20,20 +20,6 @@ struct PointFloat {
 		: x{ static_cast<float>( pt.x ) },
 		y{ static_cast<float>( pt.y ) } {}
 
-	bool normalize( ) {
-		auto hypotenuse = std::hypot( x, y );
-		
-		/*if ( hypotenuse == 0.f ) {
-			return false;
-		}*/
-		assert( hypotenuse != 0.f );
-
-		x /= hypotenuse;
-		y /= hypotenuse;
-
-		return true;
-	}
-
 	PointFloat operator+( PointFloat rhs ) const {
 		return { x + rhs.x, y + rhs.y };
 	}
