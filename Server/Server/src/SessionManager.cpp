@@ -46,7 +46,7 @@ void SessionManager::remove( std::uint8_t playerNum ) {
 		return;
 	}
 
-	// PlayerLeave는 수신 스레드가 마지막에 넣으므로 곧 끝남
+	// PlayerLeave는 수신 스레드가 마지막에 넣으므로 곧 끝남 (락 밖에서 기다림)
 	// 끝난 뒤에 자리를 비워야 새 접속이 이 자리에 들어와도 예전 스레드와 섞이지 않음
 	WaitForSingleObject( session.thread, INFINITE );
 	CloseHandle( session.thread );
@@ -57,18 +57,37 @@ void SessionManager::remove( std::uint8_t playerNum ) {
 	LeaveCriticalSection( &lock_ );
 }
 
+void SessionManager::closeAll( ) {
+	// 모든 수신 스레드에 멈추라고 요청하고, 기다릴 대상을 복사
+	auto sessions = std::array<Session, Protocol::maxPlayers>{ };
+	EnterCriticalSection( &lock_ );
+	for ( auto& session : sessions_ ) {
+		session.stopRequested = true;
+	}
+	sessions = sessions_;
+	LeaveCriticalSection( &lock_ );
+
+	// 수신 스레드는 recvPollMs 안에 끝남
+	for ( const auto& session : sessions ) {
+		if ( session.state != SlotState::Connected ) {
+			continue;
+		}
+		WaitForSingleObject( session.thread, INFINITE );
+		CloseHandle( session.thread );
+		closesocket( session.sock );
+	}
+
+	EnterCriticalSection( &lock_ );
+	sessions_.fill( Session{ } );
+	LeaveCriticalSection( &lock_ );
+	DeleteCriticalSection( &lock_ );
+}
+
 SOCKET SessionManager::getSocket( std::uint8_t playerNum ) {
 	EnterCriticalSection( &lock_ );
 	auto sock = sessions_[ playerNum - 1 ].sock;
 	LeaveCriticalSection( &lock_ );
 	return sock;
-}
-
-bool SessionManager::isConnected( std::uint8_t playerNum ) {
-	EnterCriticalSection( &lock_ );
-	bool connected = sessions_[ playerNum - 1 ].state == SlotState::Connected;
-	LeaveCriticalSection( &lock_ );
-	return connected;
 }
 
 int SessionManager::count( ) {
@@ -83,6 +102,13 @@ int SessionManager::count( ) {
 	LeaveCriticalSection( &lock_ );
 
 	return cnt;
+}
+
+bool SessionManager::shouldStop( std::uint8_t playerNum ) {
+	EnterCriticalSection( &lock_ );
+	bool stop = sessions_[ playerNum - 1 ].stopRequested;
+	LeaveCriticalSection( &lock_ );
+	return stop;
 }
 
 void SessionManager::broadcast( const void* packet, int size ) {
@@ -102,12 +128,11 @@ void SessionManager::broadcast( const void* packet, int size ) {
 		}
 
 		// 끊겼거나 클라가 읽지 않아 타임아웃
-		// 보내다 만 패킷이 있을 수 있으므로 이 연결은 더 쓰지 않고, 종료(FIN)를 보내 클라가 닫게 함
-		// 클라가 닫으면 수신 스레드의 recv가 실패해서 PlayerLeave가 들어옴
+		// 보내다 만 패킷이 있을 수 있으므로 이 연결은 더 쓰지 않고, 수신 스레드를 끝내서 정리함
 		std::cout << "플레이어 " << i + 1 << " 전송 실패, 연결 종료\n";
-		shutdown( socks[ i ], SD_SEND );
 		EnterCriticalSection( &lock_ );
 		sessions_[ i ].sendFailed = true;
+		sessions_[ i ].stopRequested = true;
 		LeaveCriticalSection( &lock_ );
 	}
 }

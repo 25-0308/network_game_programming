@@ -10,36 +10,42 @@ bool Network::init( ) {
 }
 
 void Network::release( ) {
-	if ( listenSock_ != INVALID_SOCKET ) {
-		closesocket( listenSock_ );
-		listenSock_ = INVALID_SOCKET;
-	}
+	closeListen( );
 	WSACleanup( );
 }
 
 bool Network::listen( std::uint16_t port ) {
-	listenSock_ = socket( AF_INET, SOCK_STREAM, 0 );
-	if ( listenSock_ == INVALID_SOCKET ) {
+	auto sock = socket( AF_INET, SOCK_STREAM, 0 );
+	if ( sock == INVALID_SOCKET ) {
 		printError( "socket" );
 		return false;
 	}
+	listenSock_ = sock;
 
 	auto addr = sockaddr_in{ };
 	addr.sin_family = AF_INET;
 	addr.sin_addr.s_addr = htonl( INADDR_ANY );
 	addr.sin_port = htons( port );
 
-	if ( bind( listenSock_, reinterpret_cast<sockaddr*>( &addr ), sizeof( addr ) ) == SOCKET_ERROR ) {
+	if ( bind( sock, reinterpret_cast<sockaddr*>( &addr ), sizeof( addr ) ) == SOCKET_ERROR ) {
 		printError( "bind" );
 		return false;
 	}
 
-	if ( ::listen( listenSock_, SOMAXCONN ) == SOCKET_ERROR ) {
+	if ( ::listen( sock, SOMAXCONN ) == SOCKET_ERROR ) {
 		printError( "listen" );
 		return false;
 	}
 
 	return true;
+}
+
+void Network::closeListen( ) {
+	// 두 번 닫지 않도록 꺼내면서 비움
+	auto sock = listenSock_.exchange( INVALID_SOCKET );
+	if ( sock != INVALID_SOCKET ) {
+		closesocket( sock );
+	}
 }
 
 SOCKET Network::accept( ) {
@@ -48,7 +54,10 @@ SOCKET Network::accept( ) {
 
 	auto sock = ::accept( listenSock_, reinterpret_cast<sockaddr*>( &addr ), &addrLen );
 	if ( sock == INVALID_SOCKET ) {
-		printError( "accept" );
+		// 종료하려고 리슨 소켓을 닫은 경우는 오류가 아님
+		if ( listenSock_ != INVALID_SOCKET ) {
+			printError( "accept" );
+		}
 		return INVALID_SOCKET;
 	}
 
@@ -82,11 +91,11 @@ bool Network::sendPacket( SOCKET sock, const void* packet, int size ) {
 	return true;
 }
 
-int Network::recvPacket( SOCKET sock, char* buffer, int bufferSize ) {
+int Network::recvPacket( SOCKET sock, char* buffer, int bufferSize, const std::function<bool( )>& shouldStop ) {
 	constexpr int headerSize = sizeof( Protocol::PacketHeader );
 
 	// 헤더 먼저 받고 size만큼 나머지를 받음
-	if ( !recvAll( sock, buffer, headerSize ) ) {
+	if ( !recvAll( sock, buffer, headerSize, shouldStop ) ) {
 		return -1;
 	}
 
@@ -96,7 +105,7 @@ int Network::recvPacket( SOCKET sock, char* buffer, int bufferSize ) {
 		return -1;
 	}
 
-	if ( !recvAll( sock, buffer + headerSize, header->size - headerSize ) ) {
+	if ( !recvAll( sock, buffer + headerSize, header->size - headerSize, shouldStop ) ) {
 		return -1;
 	}
 
@@ -107,10 +116,29 @@ void Network::printError( const char* msg ) {
 	std::cout << "[오류] " << msg << " (" << WSAGetLastError( ) << ")\n";
 }
 
-bool Network::recvAll( SOCKET sock, char* buffer, int len ) {
+bool Network::recvAll( SOCKET sock, char* buffer, int len, const std::function<bool( )>& shouldStop ) {
 	int received = 0;
 
 	while ( received < len ) {
+		// 받을 데이터가 올 때까지 recvPollMs씩 기다리며 멈추라는 요청을 확인
+		fd_set readSet;
+		FD_ZERO( &readSet );
+		FD_SET( sock, &readSet );
+		auto timeout = timeval{ 0, recvPollMs * 1000 };
+
+		int ready = select( 0, &readSet, nullptr, nullptr, &timeout );
+		if ( ready == SOCKET_ERROR ) {
+			printError( "select" );
+			return false;
+		}
+		if ( ready == 0 ) {
+			if ( shouldStop( ) ) {
+				return false;
+			}
+			continue;
+		}
+
+		// 읽을 수 있으므로 막히지 않음 (연결 종료면 0)
 		int ret = recv( sock, buffer + received, len - received, 0 );
 		if ( ret == SOCKET_ERROR ) {
 			printError( "recv" );
@@ -125,4 +153,4 @@ bool Network::recvAll( SOCKET sock, char* buffer, int len ) {
 	return true;
 }
 
-SOCKET Network::listenSock_ = INVALID_SOCKET;
+std::atomic<SOCKET> Network::listenSock_ = INVALID_SOCKET;

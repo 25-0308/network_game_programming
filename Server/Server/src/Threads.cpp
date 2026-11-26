@@ -3,20 +3,38 @@
 #include "../include/Network.hpp"
 #include "../include/SessionManager.hpp"
 
+#include <atomic>
+
 namespace {
-	// 끊길 때까지 받아서 자기 작업큐에 넣기만 함
+	std::atomic<bool> running{ true };
+
+	// 끊기거나 멈추라는 요청이 올 때까지 받아서 자기 작업큐에 넣기만 함
 	DWORD playerThread( std::uint8_t playerNum ) {
-		while ( receivePlayerPacket( playerNum ) ) {
+		// 소켓은 이 스레드가 끝난 뒤에만 닫히므로 처음 한 번만 가져옴
+		auto sock = SessionManager::getSocket( playerNum );
+		while ( receivePlayerPacket( playerNum, sock ) ) {
 		}
 		return 0;
 	}
 }
 
-bool receivePlayerPacket( std::uint8_t playerNum ) {
+bool isRunning( ) {
+	return running;
+}
+
+void requestShutdown( ) {
+	running = false;
+}
+
+bool receivePlayerPacket( std::uint8_t playerNum, SOCKET sock ) {
 	auto job = Job{ };
 	job.playerNum = playerNum;
 
-	job.size = Network::recvPacket( SessionManager::getSocket( playerNum ), job.data.data( ), maxPacketSize );
+	auto shouldStop = [ playerNum ] {
+		return !isRunning( ) || SessionManager::shouldStop( playerNum );
+	};
+
+	job.size = Network::recvPacket( sock, job.data.data( ), maxPacketSize, shouldStop );
 	if ( job.size < 0 ) {
 		job.type = JobType::PlayerLeave;
 		GameLogic::pushJob( job );
@@ -44,7 +62,7 @@ DWORD WINAPI player_2_thread( LPVOID arg ) {
 
 DWORD WINAPI game_logic_thread( LPVOID arg ) {
 	// 다음 틱까지 쉬고, 시간이 되면 작업큐 실행 후 프레임 진행
-	while ( true ) {
+	while ( isRunning( ) ) {
 		auto remain = GameLogic::timeUntilNextTick( );
 		if ( remain > 0.0 ) {
 			Sleep( static_cast<DWORD>( remain * 1000.0 ) );
