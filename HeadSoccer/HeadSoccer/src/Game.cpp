@@ -19,6 +19,8 @@
 extern CharacterInfo player1;
 extern CharacterInfo player2;
 extern StageNumber stageNum;
+extern int p1GoalScore;
+extern int p2GoalScore;
 
 bool Game::init( HWND hWnd, POINT rsl, const wchar_t* serverIp ) {
 	hWnd_ = hWnd;
@@ -216,6 +218,12 @@ void Game::handlePacket( const std::vector<char>& packet ) {
 		}
 		break;
 	}
+	case Protocol::PacketType::S2C_GameEnd: {
+		if ( packet.size( ) == sizeof( Protocol::S2C_GameEnd ) ) {
+			finishMatch( *reinterpret_cast<const Protocol::S2C_GameEnd*>( packet.data( ) ) );
+		}
+		break;
+	}
 	case Protocol::PacketType::S2C_Frame: {
 		if ( packet.size( ) == sizeof( Protocol::S2C_Frame ) ) {
 			auto frame = reinterpret_cast<const Protocol::S2C_Frame*>( packet.data( ) );
@@ -271,6 +279,34 @@ void Game::startMatch( const Protocol::S2C_GameStart& start ) {
 		}
 	);
 	// 같은 수신 묶음의 첫 상태 패킷보다 먼저 경기 화면의 entry()를 끝낸다.
+	EventHandler::update( );
+}
+
+void Game::finishMatch( const Protocol::S2C_GameEnd& end ) {
+	auto type = SceneHandler::getCurrSceneType( );
+	if ( type != SceneType::InGame && type != SceneType::Result ) {
+		return;
+	}
+	const bool changed = p1GoalScore != end.scores[ 0 ] || p2GoalScore != end.scores[ 1 ];
+	p1GoalScore = end.scores[ 0 ];
+	p2GoalScore = end.scores[ 1 ];
+
+	if ( type == SceneType::Result ) {
+		if ( changed ) {
+			auto scene = SceneHandler::getCurrScene( );
+			scene->exit( );
+			scene->entry( );
+		}
+		return;
+	}
+
+	EventHandler::addEvent(
+		Event{
+			.type = EventType::ChangeScene,
+			.wParam = static_cast<DWORD_PTR>( SceneType::Result )
+		}
+	);
+	// 최종 점수를 반영한 뒤 결과 화면의 entry()에서 승패를 표시한다.
 	EventHandler::update( );
 }
 

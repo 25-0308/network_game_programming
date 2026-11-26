@@ -2,8 +2,6 @@
 #include "../include/ResourceHandler.hpp"
 #include "../include/Timer.hpp"
 #include "../include/Camera.hpp"
-#include "../include/EventHandler.hpp"
-#include "../include/SceneHandler.hpp"
 
 Stopwatch::Stopwatch( PointFloat pos, std::uint16_t time )
 	: Object( "Stopwatch", pos, PointFloat( ) ),
@@ -21,14 +19,6 @@ Stopwatch::Stopwatch( PointFloat pos, std::uint16_t time )
 
 void Stopwatch::update( ) {
 	time_ = Timer::remainTime( );
-	if ( Timer::isFinished( ) && SceneHandler::getCurrSceneType( ) == SceneType::InGame ) {
-		EventHandler::addEvent(
-			Event{
-				.type = EventType::ChangeScene,
-				.wParam = static_cast<DWORD_PTR>( SceneType::Result )
-			}
-		);
-	}
 }
 
 void Stopwatch::render( HDC hdc ) {
