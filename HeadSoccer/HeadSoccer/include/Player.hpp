@@ -10,26 +10,17 @@
 class Player : public Object
 {
 public:
-	Player(const std::string& name, int ss, int ks, int js, const std::string& lr,int num)
+	// ss(속도), js(점프) 스탯은 서버 Player가 이동 계산에 씀 (클라는 S2C_GameState 위치만 받음)
+	// ks(발차기) 스탯은 서버 Player가 피격 데미지 계산에 씀 (클라는 S2C_GameState HP만 받음)
+	Player(const std::string& name, [[maybe_unused]] int ss, [[maybe_unused]] int ks, [[maybe_unused]] int js, const std::string& lr,int num)
 		: characterName_{ name } {
 		auto filePath = fs::path( "assets/" + name + "_player_" + lr + ".png" );
 		auto keyVal = name + "_player_" + lr;
 		image_ = ResourceHandler::loadImage( keyVal, fs::canonical( filePath ).string( ), true );
 
-		jumppower =  -( 1250.f + (40.f*js));
-		speed = ss * 50.f;
-		jspeed = 0.0f;
-		ldtimer_ = 0.0f;
-		rdtimer_ = 0.0f;
-		// a dash moves 100px over its 0.075s (dashtimer), the same in every direction for both players
-		dashdis = 100.0f / 0.075f;
-		dashtimer = 0.0f;
-		dashintime = 0.0f;
-		ldashed = false;
-		rdashed = false;
-		jumped = false;
+		// 첫 S2C_GameState를 받기 전까지 보여 줄 값 (HP, 기절은 서버 값으로 덮음)
 		hp_ = maxHp;
-		stunT_ = 0.0f;
+		stunned_ = false;
 		kickCooldown_ = 0.0f;
 		kickAnimT_ = 0.0f;
 
@@ -86,8 +77,7 @@ public:
 		createCollider( );
 		getCollider( )->setScale( PointFloat( 70.f, 90.f ) );
 		getCollider( )->setOffset( PointFloat( 0.f, 15.f ) );
-		
-		kickstat = ks;
+
 		pnum_ = num;
 	}
 
@@ -96,15 +86,14 @@ public:
 	void update( const Protocol::PlayerState& state );
 	void render(HDC hdc)override;
 
-	void onCollision( Object* other ) override;
 	void onCollisionEntry( Object* other ) override;
 	void onCollisionExit( Object* other ) override;
 
 	void kick();
-	void takeHit( float damage );
 
+	// HP, 기절은 서버 Player가 판정하고 S2C_GameState로 받은 값
 	bool isStunned( ) const {
-		return stunT_ > 0.f;
+		return stunned_;
 	}
 	float getHp( ) const {
 		return hp_;
@@ -125,17 +114,16 @@ public:
 	static constexpr std::uint8_t kickFrameCnt = 8;
 	static constexpr float kickFrameTime = 0.03f;
 
-	// back to the kickoff position with no jump or dash in progress
+	// back to the kickoff position with no kick in progress
+	// (점프, 대시 상태는 서버 Player::resetToKickoff가 초기화)
 	void reset( PointFloat pos ) {
 		pos_ = pos;
-		jspeed = 0.0f;
-		ldtimer_ = 0.0f;
-		rdtimer_ = 0.0f;
-		dashtimer = 0.0f;
-		dashintime = 0.0f;
-		ldashed = false;
-		rdashed = false;
-		jumped = false;
+		lDashTapT_ = 0.f;
+		rDashTapT_ = 0.f;
+		dashT_ = 0.f;
+		dashCooldownT_ = 0.f;
+		lDashing_ = false;
+		rDashing_ = false;
 		kickCooldown_ = 0.0f;
 		kickAnimT_ = 0.0f;
 		getAnimator( )->play( idleAnimName( ) );
@@ -144,29 +132,28 @@ public:
 
 private:
 	const std::string characterName_;
-	int kickstat;
 	Image* image_;
-	float jumppower;
 	int pnum_;
-	float speed;
-	float jspeed;
-	float ldtimer_;
-	float rdtimer_;
-	float dashdis;
-	float dashtimer;
-	float dashintime;
-	bool ldashed;
-	bool rdashed;
-	bool jumped;
 	float hp_;
-	float stunT_;
+	bool stunned_;
 	float kickCooldown_;
 	float kickAnimT_;
 	std::optional<Protocol::PlayerAnim> serverAnim_;	// 마지막으로 받은 서버 애니메이션
 
-	void separateFrom( Player* other );
+	// 대시 효과음 판정용 (대시 이동은 서버가 함), 서버 Player의 대시 규칙과 같음
+	float lDashTapT_ = 0.f;		// 왼쪽 키 두 번째 뗌을 기다리는 시간
+	float rDashTapT_ = 0.f;		// 오른쪽 키 두 번째 뗌을 기다리는 시간
+	float dashT_ = 0.f;			// 대시 남은 시간
+	float dashCooldownT_ = 0.f;	// 다음 대시까지 남은 시간
+	bool lDashing_ = false;
+	bool rDashing_ = false;
 
-	// 발차기 시작: 소리, 모션, 상대와 공 판정 (쿨타임 확인은 호출하는 쪽에서)
+	// 한 방향 키의 대시 판정, 대시가 시작되면 효과음만 재생
+	// released: 이번 프레임에 그 방향 키를 뗌 (KeyState::Away)
+	void updateDashSound( bool released, float& myTapT, float& otherTapT, bool& dashing, float dt );
+
+	// 발차기 시작: 소리, 모션, 공 판정 (쿨타임 확인은 호출하는 쪽에서)
+	// 상대 피격 판정은 서버 Match::resolveKick이 함
 	void startKick( );
 
 	// 서버 애니메이션 적용, Kick으로 바뀌는 순간을 발차기 이벤트로 봄
