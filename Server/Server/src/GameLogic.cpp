@@ -265,6 +265,12 @@ void GameLogic::update( ) {
 			break;
 		}
 		match_.tick( );
+
+		// 골 판정은 Match가 하고, 점수는 여기서 올림 (S2C_GameState, S2C_GameEnd도 이 점수를 씀)
+		if ( auto scorer = match_.takeScorer( ); scorer != 0 ) {
+			++scores_[ scorer - 1 ];
+			goalScored_ = true;
+		}
 		break;
 
 	default:
@@ -306,6 +312,17 @@ void GameLogic::render( ) {
 		SessionManager::broadcast( &ball, sizeof( ball ) );
 	}
 
+	// 골은 같은 틱의 상태, 공 다음에 보냄
+	if ( goalScored_ ) {
+		goalScored_ = false;
+
+		auto goal = Protocol::S2C_Goal{ };
+		for ( auto i = 0; i < Protocol::maxPlayers; ++i ) {
+			goal.scores[ i ] = scores_[ i ];
+		}
+		SessionManager::broadcast( &goal, sizeof( goal ) );
+	}
+
 	// 종료 후 준비가 풀린 것도 같이 알림
 	if ( ended_ ) {
 		ended_ = false;
@@ -332,6 +349,7 @@ Match GameLogic::match_;
 std::uint8_t GameLogic::stage_ = 1;
 bool GameLogic::started_ = false;
 bool GameLogic::ended_ = false;
+bool GameLogic::goalScored_ = false;
 
 std::array<bool, Protocol::maxPlayers> GameLogic::joined_{ };
 std::array<Protocol::Character, Protocol::maxPlayers> GameLogic::characters_{ };

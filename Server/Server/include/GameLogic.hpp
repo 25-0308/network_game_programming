@@ -81,6 +81,7 @@ private:
 	static std::uint8_t stage_;	// 1 ~ stageCount
 	static bool started_;		// 이번 틱에 경기 시작 (render에서 S2C_GameStart 전송)
 	static bool ended_;			// 이번 틱에 시간이 끝남 (render에서 S2C_GameEnd 전송)
+	static bool goalScored_;	// 이번 틱에 골 (render에서 S2C_Goal 전송)
 
 	// Join 처리 여부 (게임 로직 스레드 기준의 접속 인원, SessionManager와 따로 관리)
 	static std::array<bool, Protocol::maxPlayers> joined_;
